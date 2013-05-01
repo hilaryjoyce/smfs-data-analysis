@@ -58,7 +58,6 @@ def saveTssForce(folder, type, k = 0):
         os.mkdir("%sTss_Force_data/" % folder)
 
     tf_list, curve_number_list = tss_force_list(folder, type, k=k)
-    print "success"
     i = 0
     while i < len(curve_number_list):
         filename = "%sTss_Force_data/tss_force_%s.txt" % (folder, curve_number_list[i])
