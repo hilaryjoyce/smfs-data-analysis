@@ -35,6 +35,7 @@ def PlateauForceList(folder, SD = 0.017):
 
 def saveForceList(folder, SD = 0.017):
     import os
+    from numpy import zeros
 
     if not os.path.isdir("%sTransform_analysis/" % folder):
         os.mkdir("%sTransform_analysis/" % folder)
@@ -51,9 +52,11 @@ def saveForceList(folder, SD = 0.017):
     i = 0
     while i < len(force_list):
         Lc = force_list[i]
+        if len(Lc) <= 10:
+            Lc = zeros(10)
         curve = curve_num_list[i]
         filename = "%sLc_list_%s.txt" %(savefolder, curve)
-        saveFile1(filename, Lc, "Plateau force values (pN) with SD = %g" % SD)
+        saveFile1(filename, Lc, "# Plateau force values (pN) with SD = %g" % SD)
         i = i+1
 
 def locate_tail(tss, force, N = 0, step = 20, SD = 0.017):
@@ -107,7 +110,7 @@ def saveFile1(path, col1, col1_name):
     file.write("%s\n" % col1_name)
     k  =0
     while k<len(col1):
-        el = '%3g\n' % col1[k]
+        el = '%g\n' % col1[k]
         file.write(el)
         k=k+1
     file.close

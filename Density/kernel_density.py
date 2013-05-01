@@ -3,24 +3,34 @@
         - specific folder containing the 1D lists of choice (folder)
         - covariance factor (covfac)
         - grid spacing for the returned density (delta)
+        - min and max ranges to place the KDE in
+        - the defaults are set up for the WLC protein analysis, NOT DNA analysis, where they should be:
+            covfac = 0.3 # covariance factor for KDE of plateau region
+            delta = 0.001 # grid size (nN) for calculating the KDE for the plateau region
+            min_x = -5.0 # minimum force for density (nN)
+            max_x = 5.0 # maximum force for density (could be 1 nN but this allows us to detect wonky curves)
 '''
 
-def kernelDensity(List, covfac=8, delta=0.25, max_list = 600):
+def kernelDensity(List, covfac=8, delta=0.25, min_x = 0, max_x = 600):
     ''' Calculates the kernel density, returns xs and density_xs
     Default covariance factor = 6, delta = 0.5 nm.'''
+    print covfac, delta, min_x, max_x
     from scipy.stats import gaussian_kde
     from numpy import zeros, arange, asarray
-    xs = arange(0,max_list,delta)
+    xs = arange(min_x,max_x,delta)
     if (len(List) <= 15):
         density_xs = zeros(len(xs))
     else:
         density = gaussian_kde(List)
-        density.covariance_factor = lambda : covfac/max(List)
+        if covfac < 5:
+            density.covariance_factor = lambda : covfac # /max(List) originally but that doesn't work for peeling plots!
+        else: 
+            density.covariance_factor = lambda : covfac/max(List)
         density._compute_covariance()
         density_xs = asarray([round(x,10) for x in density(xs)])
     return [xs, density_xs]
 
-def densityList(folder, covfac = 8, delta = 0.25, max_list = 600):
+def densityList(folder, covfac = 8, delta = 0.25, min_x = 0, max_x = 600):
     from glob import glob
     list_files = glob("%sList_text/*.txt" % folder)
 
@@ -28,12 +38,12 @@ def densityList(folder, covfac = 8, delta = 0.25, max_list = 600):
     curve_num_list = []
     for file in list_files:
         List = load1Col(file)
-        density_list.append(kernelDensity(List, covfac, delta, max_list))
+        density_list.append(kernelDensity(List, covfac, delta, min_x, max_x))
         curve_num_list.append(curveNumFinder(file))
 
     return density_list, curve_num_list
 
-def saveKDE(folder, covfac = 8, delta = 0.25, max_list = 600):
+def saveKDE(folder, covfac = 8, delta = 0.25, min_x = 0, max_x = 600):
     '''New density folder assumes list folder begins with List_'''
     import os
     density_folder = "%sDensity_text/" % folder
@@ -41,7 +51,7 @@ def saveKDE(folder, covfac = 8, delta = 0.25, max_list = 600):
     if not os.path.isdir(density_folder):
         os.mkdir(density_folder)
 
-    density_list, curve_num_list = densityList(folder, covfac, delta, max_list)
+    density_list, curve_num_list = densityList(folder, covfac, delta, min_x, max_x)
     i = 0
     while i < len(density_list):
         xs = density_list[i][0]
@@ -66,7 +76,7 @@ def load1Col(fileName):
     A = []
     file = open(fileName, 'r')
     for line in file:
-        if line.startswith('F'):
+        if line.startswith('# '):
                 continue
         A.append(float(line.split()[0]))
     file.close

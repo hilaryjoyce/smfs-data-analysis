@@ -24,6 +24,7 @@ def LcList(folder, p = 0.4, minTss = 5, minForce = 45):
 
 def saveLcList(folder, p = 0.4, minTss = 5.0, minForce = 45.0):
     import os
+    from numpy import zeros
 
     if not os.path.isdir("%sTransform_analysis/" % folder):
         os.mkdir("%sTransform_analysis/" % folder)
@@ -40,9 +41,11 @@ def saveLcList(folder, p = 0.4, minTss = 5.0, minForce = 45.0):
     i = 0
     while i < len(Lc_list):
         Lc = Lc_list[i]
+        if len(Lc) <= 10:
+            Lc = zeros(10)
         curve = curve_num_list[i]
         filename = "%sLc_list_%s.txt" %(savefolder, curve)
-        saveFile1(filename, Lc, "Fitted Contour Lengths (nm) with p = %g" % p)
+        saveFile1(filename, Lc, "# Fitted Contour Lengths (nm) with p = %g" % p)
         i = i+1
 
 def curveNumFinder(fileName):
@@ -141,7 +144,7 @@ def saveFile1(path, col1, col1_name):
     file.write("%s\n" % col1_name)
     k  =0
     while k<len(col1):
-        el = '%3g\n' % col1[k]
+        el = '%g\n' % col1[k]
         file.write(el)
         k=k+1
     file.close
