@@ -74,7 +74,6 @@ def saveCoincidence(folder, shift = 'No', mode = 'full'):
 
     file.close()
 
-
 def absCoincidence(lc, d1, d2, mode='full'):
     '''Runs in one function. Most efficient.'''
     from scipy.signal import fftconvolve

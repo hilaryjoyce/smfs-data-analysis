@@ -10,7 +10,7 @@
 def LcList(folder, p = 0.4, minTss = 5, minForce = 45):
     from glob import glob
 
-    tss_force_files = glob('%sTss_force_text/*.txt' % folder)
+    tss_force_files = glob('%sTss_Force_text/*.txt' % folder)
     
     Lc_list = []
     curve_num_list = []
