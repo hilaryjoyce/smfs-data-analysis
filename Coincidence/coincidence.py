@@ -1,6 +1,10 @@
 ''' Using scipy.signal's fast fourier transform convolution.
     Currently no accounting for shift.
-    April 26, 2013'''
+    Parameters:
+        - folder specifying the parameters of the inputs (folder)
+        - mode of fft (currently just using 'full')
+        - shift (currently not even using this parameter)
+'''
 
 def absCoincidence(lc, d1, d2, mode='full'):
     '''Runs in one function. Most efficient.'''
@@ -65,3 +69,39 @@ def absCoincidence_step(lc, d1, d2):
     s = scaling(d1, d2)
     Gamma = C * s
     return Gamma, max_id, max_lc
+
+# These are super redundant but OH WELL
+
+def saveFile1(path, col1, col1_name):
+    '''Saves a file with 1 column of data.'''
+    file = open(path, 'w')
+    file.write("%s\n" % col1_name)
+    k  =0
+    while k<len(col1):
+        el = '%3g\n' % col1[k]
+        file.write(el)
+        k=k+1
+    file.close
+
+def load2Col(fileName, header=True, col1_num=True):
+    from numpy import asarray
+    ''' Takes a file with two columns and return each as an array. '''
+    A = []
+    B = []
+    file = open(fileName, 'r')
+    if header:
+        file.readline()
+    i =0
+    if col1_num:
+        for line in file:
+            A.append(float(line.split()[0]))
+            B.append(float(line.split()[1]))
+        file.close
+    else:
+        for line in file:
+            A.append(line.split()[0])
+            B.append(float(line.split()[1]))
+        file.close
+    A = asarray(A)
+    B = asarray(B)
+    return A, B
