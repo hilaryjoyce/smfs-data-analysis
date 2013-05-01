@@ -1,0 +1,1 @@
+'''This code WILL take force plateau data in the force-tss form and transform it into a list of valid forces.'''

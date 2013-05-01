@@ -5,35 +5,35 @@
         - grid spacing for the returned density (delta)
 '''
 
-def kernelDensity(Lc, covfac=8, delta=0.25, max_Lc = 600):
+def kernelDensity(List, covfac=8, delta=0.25, max_list = 600):
     ''' Calculates the kernel density, returns xs and density_xs
     Default covariance factor = 6, delta = 0.5 nm.'''
     from scipy.stats import gaussian_kde
     from numpy import zeros, arange, asarray
-    xs = arange(0,max_Lc,delta)
-    if (len(Lc) <= 15):
+    xs = arange(0,max_list,delta)
+    if (len(List) <= 15):
         density_xs = zeros(len(xs))
     else:
-        density = gaussian_kde(Lc)
-        density.covariance_factor = lambda : covfac/max(Lc)
+        density = gaussian_kde(List)
+        density.covariance_factor = lambda : covfac/max(List)
         density._compute_covariance()
         density_xs = asarray([round(x,10) for x in density(xs)])
     return [xs, density_xs]
 
-def densityList(folder, covfac = 8, delta = 0.25, max_Lc = 600):
+def densityList(folder, covfac = 8, delta = 0.25, max_list = 600):
     from glob import glob
     list_files = glob("%sList_text/*.txt" % folder)
 
     density_list = []
     curve_num_list = []
     for file in list_files:
-        Lc = load1Col(file)
-        density_list.append(kernelDensity(Lc, covfac, delta, max_Lc))
+        List = load1Col(file)
+        density_list.append(kernelDensity(List, covfac, delta, max_list))
         curve_num_list.append(curveNumFinder(file))
 
     return density_list, curve_num_list
 
-def saveKDE(folder, covfac = 8, delta = 0.25, max_Lc = 600):
+def saveKDE(folder, covfac = 8, delta = 0.25, max_list = 600):
     '''New density folder assumes list folder begins with List_'''
     import os
     density_folder = "%sDensity_text/" % folder
@@ -41,7 +41,7 @@ def saveKDE(folder, covfac = 8, delta = 0.25, max_Lc = 600):
     if not os.path.isdir(density_folder):
         os.mkdir(density_folder)
 
-    density_list, curve_num_list = densityList(folder, covfac, delta, max_Lc)
+    density_list, curve_num_list = densityList(folder, covfac, delta, max_list)
     i = 0
     while i < len(density_list):
         xs = density_list[i][0]
