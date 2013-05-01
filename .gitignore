@@ -2,3 +2,5 @@
 *.pyc
 */.DS_Store
 .DS_Store
+smfs_data_analysis.sublime-project
+smfs_data_analysis.sublime-workspace
