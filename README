@@ -7,8 +7,9 @@ Tss_force_code :
 Peeling_code : 
     - takes peeling-type force-separation data and produces cut-off list of forces (2D -> 1D transform)
 
-WLC_code : 
-    - takes tss_force data and converts it using the WLC into Lc values (2D -> 1D transform)
+Transform_code : 
+    - Lc_transform takes tss_force data and converts it using the WLC into Lc values (2D -> 1D transform)
+    - Plateau_transform takes tss_force data and finds the last, long plateau as in DNA data and produces a list of those force values only
 
 Density_code :
     - takes any list of values and produces a gaussian kernel density estimate
