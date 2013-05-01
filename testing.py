@@ -1,5 +1,7 @@
-from Density_code.kernel_density import *
+from Coincidence.coincidence import *
+from Transform.Lc_transform import *
 
-folder = '../Data/aLa_flat_tiny/Transform_text/Parameters_p0.4_minTss10_minForce45/'
+super_folder = '../Data/aLa_flat_tiny/'
+param_folder = '../Data/aLa_flat_tiny/Transform_analysis/Parameters_p0.4_minTss5_minForce45/'
 
-saveKDE(folder)
+saveCoincidence(param_folder)

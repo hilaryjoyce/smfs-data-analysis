@@ -4,7 +4,7 @@
         - persistence length 'p'
         - minimum valid force 'minForce'
         - minimum valid tss 'minTss'
-    Saves into "Transform_text" folder (Transform_text folders contain any 1D representation of the data!)
+    Saves into "Transform_analysis" folder (Transform_analysis folders contain any 1D representation of the data!)
 '''
 
 def LcList(folder, p = 0.4, minTss = 5, minForce = 45):
@@ -25,14 +25,14 @@ def LcList(folder, p = 0.4, minTss = 5, minForce = 45):
 def saveLcList(folder, p = 0.4, minTss = 5.0, minForce = 45.0):
     import os
 
-    if not os.path.isdir("%sTransform_text/" % folder):
-        os.mkdir("%sTransform_text/" % folder)
+    if not os.path.isdir("%sTransform_analysis/" % folder):
+        os.mkdir("%sTransform_analysis/" % folder)
 
     parameter_folder = "Parameters_p%g_minTss%d_minForce%d/" % (p, int(minTss), int(minForce))
-    if not os.path.isdir("%sTransform_text/%s" % (folder, parameter_folder)):
-        os.mkdir("%sTransform_text/%s" % (folder, parameter_folder))
+    if not os.path.isdir("%sTransform_analysis/%s" % (folder, parameter_folder)):
+        os.mkdir("%sTransform_analysis/%s" % (folder, parameter_folder))
 
-    savefolder = "%sTransform_text/%s/List_text/" % (folder, parameter_folder)
+    savefolder = "%sTransform_analysis/%s/List_text/" % (folder, parameter_folder)
     if not os.path.isdir(savefolder):
         os.mkdir(savefolder)
 
