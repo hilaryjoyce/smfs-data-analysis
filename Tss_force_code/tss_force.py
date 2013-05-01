@@ -60,7 +60,7 @@ def saveTssForce(folder, type, k = 0):
     tf_list, curve_number_list = tss_force_list(folder, type, k=k)
     i = 0
     while i < len(curve_number_list):
-        filename = "%sTss_Force_data/tss_force_%s.txt" % (folder, curve_number_list[i])
+        filename = "%sTss_Force_text/tss_force_%s.txt" % (folder, curve_number_list[i])
         saveFile2(filename, tf_list[i][0], tf_list[i][1], "Tss (nm)", "Force (pN)")
         i = i+1
 
