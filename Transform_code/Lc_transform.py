@@ -22,18 +22,24 @@ def LcList(folder, p = 0.4, minTss = 5, minForce = 45):
 
     return Lc_list, curve_num_list
 
-def saveLcList(folder, p = 0.4, minTss = 5, minForce = 45):
+def saveLcList(folder, p = 0.4, minTss = 5.0, minForce = 45.0):
     import os
 
     if not os.path.isdir("%sTransform_text/" % folder):
         os.mkdir("%sTransform_text/" % folder)
+
+    parameter_folder = "Lc_list_p%g_minTss%d_minForce%d/" % (p, int(minTss), int(minForce))
+    if not os.path.isdir("%sTransform_text/%s" % (folder, parameter_folder)):
+        os.mkdir("%sTransform_text/%s" % (folder, parameter_folder))
+
+    savefolder = "%sTransform_text/%s" % (folder, parameter_folder)
 
     Lc_list, curve_num_list = LcList(folder, p, minTss, minForce)
     i = 0
     while i < len(Lc_list):
         Lc = Lc_list[i]
         curve = curve_num_list[i]
-        filename = "%sTransform_text/Lc_list_%s.txt" %(folder, curve)
+        filename = "%sLc_list_%s.txt" %(savefolder, curve)
         saveFile1(filename, Lc, "Fitted Contour Lengths (nm) with p = %g" % p)
         i = i+1
 
