@@ -1,5 +1,8 @@
 from Tss_force_code.tss_force import *
 
-folder = '../Data/aLa_flat_tiny/'
+folder = '../Data/DNA_tiny/'
 
-saveTssForce(folder, type='RDF')
+tf_list, cnum_list = tss_force_list(folder, type='ADR', k=0.367)
+saveTssForce(folder, type='ADR', k = 0.367)
+print cnum_list
+print tf_list[0][0]
