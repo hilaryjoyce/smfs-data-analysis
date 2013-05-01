@@ -28,11 +28,13 @@ def saveLcList(folder, p = 0.4, minTss = 5.0, minForce = 45.0):
     if not os.path.isdir("%sTransform_text/" % folder):
         os.mkdir("%sTransform_text/" % folder)
 
-    parameter_folder = "Lc_list_p%g_minTss%d_minForce%d/" % (p, int(minTss), int(minForce))
+    parameter_folder = "Parameters_p%g_minTss%d_minForce%d/" % (p, int(minTss), int(minForce))
     if not os.path.isdir("%sTransform_text/%s" % (folder, parameter_folder)):
         os.mkdir("%sTransform_text/%s" % (folder, parameter_folder))
 
-    savefolder = "%sTransform_text/%s" % (folder, parameter_folder)
+    savefolder = "%sTransform_text/%s/List_text/" % (folder, parameter_folder)
+    if not os.path.isdir(savefolder):
+        os.mkdir(savefolder)
 
     Lc_list, curve_num_list = LcList(folder, p, minTss, minForce)
     i = 0

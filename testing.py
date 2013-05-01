@@ -1,5 +1,5 @@
-from Transform_code.Lc_transform import *
+from Density_code.kernel_density import *
 
-folder = '../Data/aLa_flat_tiny/'
+folder = '../Data/aLa_flat_tiny/Transform_text/Parameters_p0.4_minTss5_minForce45/'
 
-saveLcList(folder, minTss = 10)
+saveKDE(folder)
