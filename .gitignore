@@ -1,0 +1,4 @@
+# this is a list of the files git will ignore
+*.pyc
+*/.DS_Store
+.DS_Store

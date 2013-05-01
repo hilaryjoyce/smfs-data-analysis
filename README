@@ -1,0 +1,22 @@
+Here is all the code for analyzing both WLC-type data and peeling-type data.
+
+Tss_force_code : 
+    - takes raw data in Sara's form (DNA peeling data) and converts it to force vs. tip-sample-separation data
+    - takes RDF files and converts them into tip-sample-separation data.
+
+Peeling_code : 
+    - takes peeling-type force-separation data and produces cut-off list of forces (2D -> 1D transform)
+
+WLC_code : 
+    - takes tss_force data and converts it using the WLC into Lc values (2D -> 1D transform)
+
+Density_code :
+    - takes any list of values and produces a gaussian kernel density estimate
+
+Coincidence_code :
+    - takes any set of KDEs and calculates the coincidence matrix
+
+Cluster_code :
+    - takes any list representing a lower triangular coincidence matrix and produces an agglomerative hierarchical cluster
+
+
