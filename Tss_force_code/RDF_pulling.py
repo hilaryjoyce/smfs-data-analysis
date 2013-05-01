@@ -19,9 +19,10 @@ def curveNumFinder(fileName):
 def loadRDF(fileName):
     ''' Takes a standard SMFS file with ramp, force, and deflection data
         and returns ramp, force, and deflection arrays'''
-    ramp = np.zeros(6144) # in nm
-    defl = np.zeros(6144) # in nm
-    force = np.zeros(6144) # in pN
+    from numpy import zeros
+    ramp = zeros(6144) # in nm
+    defl = zeros(6144) # in nm
+    force = zeros(6144) # in pN
     file = open(fileName, 'r')
     file.readline()
     i = 0
@@ -36,9 +37,10 @@ def loadRDF(fileName):
 def tss_force(fileName):
     ''' Takes ramp, force and deflection arrays and 
         calculates the aligned and zeroed tss (nm) and force (pN)'''
+    from numpy import average
     ramp, defl, force = loadRDF(fileName)
     tss = (ramp-defl)*-1+400
-    force = (force-np.average(force[5837:6144]))*-1
+    force = (force-average(force[5837:6144]))*-1
     
     zero=0
     while (force[zero]<0):

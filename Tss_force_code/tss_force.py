@@ -14,16 +14,16 @@ def tss_force_list(folder, type):
     if type == 'RDF':
         import RDF_pulling as pull
         
-        RDF_folder = '%s/RDF_text/'
+        RDF_folder = '%sRDF_text/' % folder
         RDF_files = glob('%s*.txt' % RDF_folder)
-        
-        tss_force_list = []
+
+        tf_list = []
         curve_number_list = []
         for file in RDF_files:
             curve_number_list.append(pull.curveNumFinder(file))
-            tss_force_list.append(pull.tss_force(file))
+            tf_list.append(pull.tss_force(file))
 
-    return tss_force_list, curve_number_list
+    return tf_list, curve_number_list
 
 def saveFile2(path, col1, col2, col1_name, col2_name):
     '''Saves a file with 2 columns of data.'''
@@ -40,10 +40,14 @@ def saveTssForce(folder, type):
     ''' Save a .txt file of tss and force to Tss_force_data folder.
         Should only be executed once for all files in
         a given experiment or it's rather redundant.'''
-        tss_force_list, curve_number_list = tss_force_list(folder, type)
-        i = 0
-        while i < len(curve_number_list):
-            filename = "%s/Tss_Force_data/tss_force_%s.txt" % (folder, curve_number_list[i])
-            saveFile2(filename, tss_force_list[i][0], tss_force_list[i][1], "Tss (nm)", "Force (pN)")
-            i = i+1
+    import os
+    if not os.path.isdir("%sTss_Force_data/" % folder):
+        os.mkdir("%sTss_Force_data/" % folder)
+
+    tf_list, curve_number_list = tss_force_list(folder, type)
+    i = 0
+    while i < len(curve_number_list):
+        filename = "%sTss_Force_data/tss_force_%s.txt" % (folder, curve_number_list[i])
+        saveFile2(filename, tf_list[i][0], tf_list[i][1], "Tss (nm)", "Force (pN)")
+        i = i+1
 
