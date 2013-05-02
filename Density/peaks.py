@@ -20,24 +20,35 @@ def findPeaks(x, y, tolerance=0.08):
             if (y[count] > min_y):
                 maxima_num+=1
                 max_locations.append(count)
-    
+
     maxima_x = []
     for index in max_locations:
-        maxima_x.append(x[index])
+        maxima_x.append(round(x[index],9))
         
     maxima_y = []
     for index in max_locations:
-        maxima_y.append(y[index])
+        maxima_y.append(round(y[index],9))
     
     return maxima_x, maxima_y
 
-def jumps(x):
+def findPeaks_second(x, y, tolerance = 0.00005):
+    '''Finds the second derivative and then the minima to locate all peaks.
+        Requires smooth data.'''
+    from numpy import gradient
+    max_x, max_dd_y = findPeaks(x,-1*gradient(gradient(y)), tolerance)
+    return max_x, max_dd_y
+
+def jumps(x, to_zero = True):
     '''Takes an array x and returns the difference between values,
     and between the last value in the array and 0.'''
     jumps = []
-    i = 1
-    while i < len(x):
-        jumps.append(x[i] - x[i-1])
-        i = i+1
-    jumps.append(jumps[i-1])
+    if len(x) == 1:
+        jumps.append(0-x[0])
+    else:
+        i = 1
+        while i < len(x):
+            jumps.append(x[i] - x[i-1])
+            i = i+1
+        if to_zero:
+            jumps.append(0-x[i-1])
     return jumps
