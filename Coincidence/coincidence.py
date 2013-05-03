@@ -80,10 +80,13 @@ def absCoincidence(lc, d1, d2, mode='full'):
     from numpy import dot, sqrt, where
 
     dx = lc[1]-lc[0]
-    fft_flip = fftconvolve(d1, d2[::-1], mode='full')
+    fft_flip = fftconvolve(d1, d2[::-1], mode=mode)
     max_conv = max(fft_flip)
     max_id = where(fft_flip == max_conv)[0][0]
-    max_id = max_id - len(fft_flip)/2
+
+    if mode == 'full':        
+        max_id = max_id - len(fft_flip)/2
+
     max_lc = max_id*dx
 
     dot_d1 = dot(d1, d1)
@@ -175,11 +178,16 @@ def load2Col(fileName, header=True, col1_num=True):
     return A, B
 
 def curveNumFinder(fileName):
-    ''' Takes a filename and assuming XXX.txt format, 
-        returns the curve number XXX as a string.
-        Aborts and returns error if XXX is not a number.'''
+    ''' Takes a filename and assuming {x}XXX.txt or LineXXXXPointXXXXformat, 
+        returns the curve number {x}XXX as a string or XXXX.XXXX as the
+        curve identifier.'''
     import re
-    curve = re.search('[a-z]?[0-9]{3}(?=.txt)', fileName)
-    curveNum = curve.group(0)
-        
+    line_type = re.search('Line', fileName)
+    if line_type:
+        curve =  re.findall('[0-9]{4}', fileName)
+        curveNum = "%s.%s" % (curve[0], curve[1])
+    else:
+        curve = re.search('[a-z]?[0-9]{3}(?=.txt)', fileName)
+        curveNum = curve.group(0)
     return curveNum
+

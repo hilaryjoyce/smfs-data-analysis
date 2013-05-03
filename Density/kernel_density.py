@@ -11,10 +11,27 @@
             max_x = 5.0 # maximum force for density (could be 1 nN but this allows us to detect wonky curves)
 '''
 
+def saveKDE(folder, covfac = 8, delta = 0.25, min_x = 0, max_x = 600):
+    '''New density folder assumes list folder begins with List_'''
+    import os
+    density_folder = "%sDensity_text/" % folder
+    print density_folder
+    if not os.path.isdir(density_folder):
+        os.mkdir(density_folder)
+
+    density_list, curve_num_list = densityList(folder, covfac, delta, min_x, max_x)
+    i = 0
+    while i < len(density_list):
+        xs = density_list[i][0]
+        density_xs = density_list[i][1]
+        curve = curve_num_list[i]
+        filename = "%sDensity_%s.txt" %(density_folder, curve)
+        saveFile2(filename, xs, density_xs, 'Value', 'KDE')
+        i = i+1
+
 def kernelDensity(List, covfac=8, delta=0.25, min_x = 0, max_x = 600):
     ''' Calculates the kernel density, returns xs and density_xs
     Default covariance factor = 6, delta = 0.5 nm.'''
-    print covfac, delta, min_x, max_x
     from scipy.stats import gaussian_kde
     from numpy import zeros, arange, asarray
     xs = arange(min_x,max_x,delta)
@@ -22,7 +39,7 @@ def kernelDensity(List, covfac=8, delta=0.25, min_x = 0, max_x = 600):
         density_xs = zeros(len(xs))
     else:
         density = gaussian_kde(List)
-        if covfac < 5:
+        if covfac < 3:
             density.covariance_factor = lambda : covfac # /max(List) originally but that doesn't work for peeling plots!
         else: 
             density.covariance_factor = lambda : covfac/max(List)
@@ -43,32 +60,18 @@ def densityList(folder, covfac = 8, delta = 0.25, min_x = 0, max_x = 600):
 
     return density_list, curve_num_list
 
-def saveKDE(folder, covfac = 8, delta = 0.25, min_x = 0, max_x = 600):
-    '''New density folder assumes list folder begins with List_'''
-    import os
-    density_folder = "%sDensity_text/" % folder
-    print density_folder
-    if not os.path.isdir(density_folder):
-        os.mkdir(density_folder)
-
-    density_list, curve_num_list = densityList(folder, covfac, delta, min_x, max_x)
-    i = 0
-    while i < len(density_list):
-        xs = density_list[i][0]
-        density_xs = density_list[i][1]
-        curve = curve_num_list[i]
-        filename = "%sDensity_%s.txt" %(density_folder, curve)
-        saveFile2(filename, xs, density_xs, 'Value', 'KDE')
-        i = i+1
-
 def curveNumFinder(fileName):
-    ''' Takes a filename and assuming XXX.txt format, 
-        returns the curve number XXX as a string.
-        Aborts and returns error if XXX is not a number.'''
+    ''' Takes a filename and assuming {x}XXX.txt or LineXXXXPointXXXXformat, 
+        returns the curve number {x}XXX as a string or XXXX.XXXX as the
+        curve identifier.'''
     import re
-    curve = re.search('[a-z]?[0-9]{3}(?=.txt)', fileName)
-    curveNum = curve.group(0)
-        
+    line_type = re.search('DNA', fileName)
+    if line_type:
+        curve =  re.findall('[0-9]{4}', fileName)
+        curveNum = "%s.%s" % (curve[0], curve[1])
+    else:
+        curve = re.search('[a-z]?[0-9]{3}(?=.txt)', fileName)
+        curveNum = curve.group(0)
     return curveNum
 
 def load1Col(fileName):

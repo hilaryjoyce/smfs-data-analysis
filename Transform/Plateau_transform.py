@@ -115,10 +115,16 @@ def saveFile1(path, col1, col1_name):
         k=k+1
     file.close
 
-def curveNumFinder(filename):
-    ''' Takes a filename and assuming lineXXXXpontXXXX.txt format, 
-        returns the curve number XXXX.XXXX as a string.'''
+def curveNumFinder(fileName):
+    ''' Takes a filename and assuming {x}XXX.txt or LineXXXXPointXXXXformat, 
+        returns the curve number {x}XXX as a string or XXXX.XXXX as the
+        curve identifier.'''
     import re
-    curve =  re.findall('[0-9]{4}', filename)
-    curveNum = "%s.%s" % (curve[0], curve[1])
+    line_type = re.search('DNA', fileName)
+    if line_type:
+        curve =  re.findall('[0-9]{4}', fileName)
+        curveNum = "%s.%s" % (curve[0], curve[1])
+    else:
+        curve = re.search('[a-z]?[0-9]{3}(?=.txt)', fileName)
+        curveNum = curve.group(0)
     return curveNum
