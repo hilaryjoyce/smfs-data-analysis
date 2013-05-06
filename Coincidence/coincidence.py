@@ -6,9 +6,13 @@
         - shift (currently not even using this parameter)
 '''
 
-def CoincidenceList(folder, shift = 'No', mode = 'full'):
+def CoincidenceList(folder, shift = 'No'):
     from glob import glob
-
+    mode = 'full'
+    if shift == 'No':
+        mode = 'full'
+    if shift == 0:
+        mode = 'valid'
     densityFiles = glob("%sDensity_text/*.txt" % folder)
     
     eps = 10**(-3) # fixinig this since I haven't changed it in so long I forget what it means...
@@ -45,7 +49,12 @@ def CoincidenceList(folder, shift = 'No', mode = 'full'):
 
     return [curve1_list, curve2_list, gamma_list, x_max_list]
 
-def saveCoincidence(folder, shift = 'No', mode = 'full'):
+def saveCoincidence(folder, shift = 'No'):
+    '''Tales a folder specifying the PARAMETERS (not Density_text) folder
+        and saves a coincidence_report.txt file in a shift folder.
+        Currently this guy only does No shift ('valid' absCoincidence)
+        or a full no-shift coincidence for any specified numeric shift.
+    '''
     import os
     import sys
 
@@ -60,7 +69,7 @@ def saveCoincidence(folder, shift = 'No', mode = 'full'):
     print folder+savefolder
 
     savefile = "%s%scoincidence_report.txt" % (folder, savefolder)    
-    co_matrix = CoincidenceList(folder, shift, mode)
+    co_matrix = CoincidenceList(folder, shift)
 
     file = open(savefile, 'w')
     file.write("# Curve1\tCurve2\tGamma\tBest shift (nm)\n")
@@ -77,7 +86,7 @@ def saveCoincidence(folder, shift = 'No', mode = 'full'):
 def absCoincidence(lc, d1, d2, mode='full'):
     '''Runs in one function. Most efficient.'''
     from scipy.signal import fftconvolve
-    from numpy import dot, sqrt, where
+    from numpy import dot, sqrt, where, log10
 
     dx = lc[1]-lc[0]
     fft_flip = fftconvolve(d1, d2[::-1], mode=mode)
@@ -98,7 +107,9 @@ def absCoincidence(lc, d1, d2, mode='full'):
         s = sqrt(dot_d2/dot_d1)
     
     Gamma = max_conv / sqrt(dot_d1 * dot_d2) * s
-    return Gamma, max_id, max_lc
+    print dx
+
+    return round(Gamma,5), max_id, round(max_lc, int(-1*log10(dx)+1))
 
 def fft_convolution(lc, d1, d2):
     '''Use fast fourier transform to find max correlation'''
@@ -182,7 +193,7 @@ def curveNumFinder(fileName):
         returns the curve number {x}XXX as a string or XXXX.XXXX as the
         curve identifier.'''
     import re
-    line_type = re.search('Line', fileName)
+    line_type = re.search('DNA', fileName)
     if line_type:
         curve =  re.findall('[0-9]{4}', fileName)
         curveNum = "%s.%s" % (curve[0], curve[1])
