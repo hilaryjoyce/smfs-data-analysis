@@ -34,3 +34,5 @@ def hierarchical(co_report_file):
     curve1, curve2, co, shift = load_coincidence(co_report_file)
     clustering = hier.linkage(1-co, method='complete')
     return clustering
+
+def 
