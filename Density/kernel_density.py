@@ -11,15 +11,16 @@
             max_x = 5.0 # maximum force for density (could be 1 nN but this allows us to detect wonky curves)
 '''
 
-def saveKDE(folder, covfac = 8, delta = 0.25, min_x = 0, max_x = 600):
-    '''New density folder assumes list folder begins with List_'''
+def saveKDE(parameter_folder, covfac = 8, delta = 0.25, min_x = 0, max_x = 600):
+    '''Folder must be parameter folder.
+       New density folder assumes list folder begins with List_'''
     import os
-    density_folder = "%sDensity_text/" % folder
+    density_folder = "%sDensity_text/" % parameter_folder
     print density_folder
     if not os.path.isdir(density_folder):
         os.mkdir(density_folder)
 
-    density_list, curve_num_list = densityList(folder, covfac, delta, min_x, max_x)
+    density_list, curve_num_list = densityList(parameter_folder, covfac, delta, min_x, max_x)
     i = 0
     while i < len(density_list):
         xs = density_list[i][0]

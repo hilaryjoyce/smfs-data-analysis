@@ -48,6 +48,8 @@ def saveLcList(folder, p = 0.4, minTss = 5.0, minForce = 45.0):
         saveFile1(filename, Lc, "# Fitted Contour Lengths (nm) with p = %g" % p)
         i = i+1
 
+    return "%sTransform_analysis/%s" % (folder, parameter_folder)
+
 def curveNumFinder(fileName):
     ''' Takes a filename and assuming XXX.txt format, 
         returns the curve number XXX as a string.

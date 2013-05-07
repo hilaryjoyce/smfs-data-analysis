@@ -107,7 +107,6 @@ def absCoincidence(lc, d1, d2, mode='full'):
         s = sqrt(dot_d2/dot_d1)
     
     Gamma = max_conv / sqrt(dot_d1 * dot_d2) * s
-    print dx
 
     return round(Gamma,5), max_id, round(max_lc, int(-1*log10(dx)+1))
 
