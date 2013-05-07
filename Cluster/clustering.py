@@ -30,9 +30,16 @@ def load_coincidence(fileName):
 def hierarchical(co_report_file):
     '''Takes a coincidence_report text file location and returns
     the scipy.cluster object.'''
-    import scipy.cluster.hierarchy as hier
+    from scipy.cluster.hierarchy import linkage
     curve1, curve2, co, shift = load_coincidence(co_report_file)
-    clustering = hier.linkage(1-co, method='complete')
-    return clustering
+    Z = hier.linkage(1-co, method='complete')
+    return Z
 
-def 
+def flatten(Z, t):
+    from scipy.cluster.hierarchy import fcluster
+    return fcluster(Z, t, criterion='distance')
+
+class FlatCluster:
+
+    def __init__(self, Z, t):
+        
