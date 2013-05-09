@@ -76,7 +76,8 @@ def curveNumFinder(fileName):
 ''' --------------------- '''
 
 class CoAnalysis(object):
-    ''' An CoAnalysis class for representing all the information about all
+    ''' 
+    An CoAnalysis class for representing all the information about all
     the curves collected for a given experiment and set of analysis parameters. 
 
     Parameters
@@ -86,6 +87,7 @@ class CoAnalysis(object):
                         the Transform_analysis folder that contains this set of data.
 
     max_shift :         the maximum shift value used for this coincidence matrix
+
     '''
     def __init__(self, parameter_folder, max_shift):
         self.parameter_folder = parameter_folder
@@ -108,24 +110,46 @@ class CoAnalysis(object):
         self.curve1 = curve1
         self.curve2 = curve2
 
-    def coincidence_array(self):
+    def get_coincidence_array(self):
         return self.co_array
 
-    def shift_array(self):
+    def get_shift_array(self):
         return self.shift_array
 
-    def curve_names(self):
+    def list_density_files(self):
+        return self.density_files
+
+    def list_tss_force_files(self):
+        return self.tss_force_files
+
+    def list_curve_names(self):
+        '''
+        Returns a list of all the string names of the files used in
+        this clustering. 
+        '''
         return [curveNumFinder(file) for file in self.tss_force_files]
 
-    def curve_indexes(self):
+    def list_curve_indexes(self):
+        '''
+        Returns a list [0,...,N-1] where N is the number of curves used in
+        this clustering.
+        '''
         return range(len(self.tss_force_files))
 
     def hierarchical_cluster(self):
+        '''
+        Returns the hierarchical linkage array Z, clustered
+        using the complete clustering method in scipy.cluster.hierarchy
+        '''
         from scipy.cluster.hierarchy import linkage
         Z = linkage(1-self.co_array, method='complete')
         return Z
 
     def plot_dendrogram(self):
+        '''
+        Plots the dendragram visualization of Z and returns
+        the dendrogram object 'dendro'.
+        '''
         from scipy.cluster.hierarchy import dendrogram
         import matplotlib.pyplot as plt
 
@@ -149,22 +173,56 @@ class FlatClusters(CoAnalysis):
         self.T = flatten(Z, 1-self.co_cut)
         self.number = max(self.T)
 
-    def minimum_coincidence(self):
+    def get_min_coincidence(self):
+        '''
+        Returns the minimum coincidence value of this flattening.
+        '''
         return self.co_cut
 
-    def flat_cluster(self):
-        return self.T
+    def list_flat_cluster(self):
+        '''
+        Returns the list representing the cluster id of each curve 
+        at this flattening.
+        '''
+        return list(self.T)
 
-    def number_of_clusters(self):
+    def get_number_of_clusters(self):
+        '''
+        Returns the number of clusters at this flattening.
+        '''
         return self.number
 
-    def cluster_list(self):
+    def list_cluster_ids(self):
+        ''' 
+        Retruns a list of [1, ..., N] where N is the number of clusters
+        representing the ids of each cluster in the flattened set of clusters.
+        '''
         return range(1,self.number+1)
 
-    def cluster_sizes(self):
-        return [list(self.T).count(x) for x in self.cluster_list()]
+    def list_cluster_sizes(self):
+        ''' 
+        Returns a pre-ordered list of the sizes of each cluster.
+        Cluster n has size in this list at position n-1.
+        '''
+        return [list(self.T).count(x) for x in self.list_cluster_ids()]
+
+    def ordered_clusters(self):
+        '''
+        Returns a tuple of the cluster ids array ordered by size, 
+        and the correspondingly ordered array of the curve sizes.
+        '''
+        from numpy import asarray, argsort
+        sizes = asarray(self.list_cluster_sizes())
+        clusters = asarray(self.list_cluster_ids())
+        args = argsort(sizes)[::-1]
+        return clusters[args], sizes[args]
 
     def largest_clusters(self, minSize = 1):
+        '''
+        Returns a tuple of the cluster ids array ordered by size
+        and the correspondingly ordered array of the curve sizes,
+        for every cluster at least as large as the minSize.
+        '''
         clusters, sizes = self.ordered_clusters()
         i = 0
         largest_sizes = []
@@ -175,17 +233,14 @@ class FlatClusters(CoAnalysis):
             i = i+1
         return largest_clusters, largest_sizes
 
-    def ordered_clusters(self):
-        from numpy import asarray, argsort
-        sizes = asarray(self.cluster_sizes())
-        clusters = asarray(self.cluster_list())
-        args = argsort(sizes)[::-1]
-        return clusters[args], sizes[args]
-
     def curves_by_cluster(self):
-        flat = self.flat_cluster()
-        ids = self.curve_indexes()
-        cluster_list = self.cluster_list()
+        '''
+        Returns a list of the lists of all the curves (by index) in
+        each cluster (cluster n at postion n-1).
+        '''
+        flat = self.list_flat_cluster()
+        ids = self.list_curve_indexes()
+        cluster_list = self.list_cluster_ids()
         clusters = []
         for c in cluster_list:
             clusters.append([id for id in ids if flat[id] == c])
@@ -193,8 +248,8 @@ class FlatClusters(CoAnalysis):
 
     def __str__(self):
         l1 = self.parameter_folder + '\n'
-        l2 = 'Flatted cluster at minimum coincidence %g\n' % self.minimum_coincidence()
-        l3 = '%d clusters of %d curves\n' % (self.number_of_clusters(), len(self.flat_cluster()))
+        l2 = 'Flatted cluster at minimum coincidence %g\n' % self.get_min_coincidence()
+        l3 = '%d clusters of %d curves\n' % (self.get_number_of_clusters(), len(self.list_flat_cluster()))
         return l1+l2+l3
 
 class Cluster:
@@ -219,26 +274,48 @@ class Cluster:
         self.flat = flat_cluster
         self.indexes = flat_cluster.curves_by_cluster()[cluster_number-1]
 
-        self.min_coincidence = flat_cluster.minimum_coincidence()
+        self.min_coincidence = flat_cluster.get_min_coincidence()
 
     def list_curve_indexes(self):
+        '''
+        Returns a list of all the curve indices in this cluster.
+        '''
         return self.indexes
 
     def get_min_coincidence(self):
+        '''
+        Returns the minimum coincidence of the curves in this cluster.
+        '''
         return self.min_coincidence
 
     def get_cluster_size(self):
+        '''
+        Returns the size of the cluster.
+        '''
         return len(self.indexes)
 
     def list_curve_names(self):
-        '''Return the string names for each curve in this cluster.'''
-        flat_names = self.flat.curve_names()
-        curve_names = []
-        curve_indexes = self.curve_indexes()
-        i = 0
-        while i < len(curve_indexes):
-            curve_names.append(flat_names[curve_indexes[i]])
-            i = i+1
-        return curve_names
+        '''
+        Return the string names for each curve in this cluster.
+        '''
+        flat_names = self.flat.list_curve_names()
+        return [flat_names[i] for i in self.indexes]
+
+    def list_density_files(self):
+        '''
+        Returns a list of the locations of the density files for this cluster.
+        '''
+        flat_files = self.flat.list_density_files()
+        return [flat_files[i] for i in self.indexes]
+
+    def list_tss_force_files(self):
+        '''
+        Returns a list of the locations of the tss_force files for this cluster.
+        '''
+        flat_files = self.flat.list_tss_force_files()
+        return [flat_files[i] for i in self.indexes]
+
+
+
 
 
