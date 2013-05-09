@@ -78,6 +78,14 @@ def curveNumFinder(fileName):
 class CoAnalysis(object):
     ''' An CoAnalysis class for representing all the information about all
     the curves collected for a given experiment and set of analysis parameters. 
+
+    Parameters
+    ----------
+
+    parameter_folder :  the full string reference to the location of the parameter folder in
+                        the Transform_analysis folder that contains this set of data.
+
+    max_shift :         the maximum shift value used for this coincidence matrix
     '''
     def __init__(self, parameter_folder, max_shift):
         self.parameter_folder = parameter_folder
@@ -156,30 +164,81 @@ class FlatClusters(CoAnalysis):
     def cluster_sizes(self):
         return [list(self.T).count(x) for x in self.cluster_list()]
 
+    def largest_clusters(self, minSize = 1):
+        clusters, sizes = self.ordered_clusters()
+        i = 0
+        largest_sizes = []
+        largest_clusters = []
+        while i < len(sizes) and sizes[i] >= minSize:
+            largest_sizes.append(sizes[i])
+            largest_clusters.append(clusters[i])
+            i = i+1
+        return largest_clusters, largest_sizes
+
     def ordered_clusters(self):
         from numpy import asarray, argsort
         sizes = asarray(self.cluster_sizes())
         clusters = asarray(self.cluster_list())
         args = argsort(sizes)[::-1]
-        return sizes[args], clusters[args]
+        return clusters[args], sizes[args]
 
     def curves_by_cluster(self):
-        clusters = self.cluster_list()
         flat = self.flat_cluster()
-        N = len(self.T)
-        curve_list = [] * self.number_of_clusters()
-        for i in range(N):
-            curve_list[flat[i]+1] +=
+        ids = self.curve_indexes()
+        cluster_list = self.cluster_list()
+        clusters = []
+        for c in cluster_list:
+            clusters.append([id for id in ids if flat[id] == c])
+        return clusters
+
+    def __str__(self):
+        l1 = self.parameter_folder + '\n'
+        l2 = 'Flatted cluster at minimum coincidence %g\n' % self.minimum_coincidence()
+        l3 = '%d clusters of %d curves\n' % (self.number_of_clusters(), len(self.flat_cluster()))
+        return l1+l2+l3
 
 class Cluster:
 
-    def __init__(self, cluster_id, flat_cluster):
+    '''
+        Given a given flat clustering and a number for a cluster in that flat clustering,
+        returns a single 'Cluster' object that contains information about that cluster
+        and its curves.
+
+        Parameters
+        ---------
         
-        self.id = cluster_id
+        flat_cluster : a flattened clustering object (FlatClusters) from a hierarchical cluster object
+        
+        cluster_number : a number from 1 to N where N is the number of clusters in flat_cluster
 
+    ''' 
 
+    def __init__(self, flat_cluster, cluster_number):
+        
+        self.cluster_number = cluster_number
+        self.flat = flat_cluster
+        self.indexes = flat_cluster.curves_by_cluster()[cluster_number-1]
 
+        self.min_coincidence = flat_cluster.minimum_coincidence()
 
+    def list_curve_indexes(self):
+        return self.indexes
 
+    def get_min_coincidence(self):
+        return self.min_coincidence
+
+    def get_cluster_size(self):
+        return len(self.indexes)
+
+    def list_curve_names(self):
+        '''Return the string names for each curve in this cluster.'''
+        flat_names = self.flat.curve_names()
+        curve_names = []
+        curve_indexes = self.curve_indexes()
+        i = 0
+        while i < len(curve_indexes):
+            curve_names.append(flat_names[curve_indexes[i]])
+            i = i+1
+        return curve_names
 
 
