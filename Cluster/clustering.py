@@ -75,7 +75,7 @@ def curveNumFinder(fileName):
 
 ''' --------------------- '''
 
-class CoAnalysis(object):
+class CoAnalysis(object):op
     ''' 
     An CoAnalysis class for representing all the information about all
     the curves collected for a given experiment and set of analysis parameters. 
