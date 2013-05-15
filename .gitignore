@@ -4,3 +4,5 @@
 .DS_Store
 smfs_data_analysis.sublime-project
 smfs_data_analysis.sublime-workspace
+reference_cluster_functions.py
+hierarchy_fork.py
