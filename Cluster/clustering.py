@@ -134,6 +134,9 @@ class CoAnalysis(object):
         self.curve1 = curve1
         self.curve2 = curve2
 
+        # Let's caculate Z on initiation, since we will always need it!
+        self.Z = self.hierarchical_cluster()
+
     def __str__(self):
         l1 = self.parameter_folder + '\n'
         l2 = 'Hierarchical clustering at max_shift = %s\n' % str(self.max_shift)
@@ -151,6 +154,12 @@ class CoAnalysis(object):
 
     def get_curve2_array(self):
         return self.curve2
+
+    def get_parameter_folder(self):
+        return self.parameter_folder
+
+    def get_hierarchical_cluster(self):
+        return self.Z
 
     def list_density_files(self):
         return self.density_files
@@ -241,15 +250,23 @@ class CoAnalysis(object):
         else:
              return self._map_pair_to_report(c1, c2, mode='curve2'), self._map_pair_to_report(c1, c2, mode='curve1')
 
-class FlatClusters(CoAnalysis):
+class FlatClusters:
 
-    def __init__(self, parameter_folder, max_shift, co_cut):
-        super(FlatClusters, self).__init__(parameter_folder, max_shift)
+    def __init__(self, co_analysis, co_cut):
+        ''' 
+        Instead of inheriting and thus recalculating a CoAnalysis object
+        we will just require one.
+        '''    
+        self.co_analysis = co_analysis
         self.co_cut = co_cut
+        self.parameter_folder = co_analysis.get_parameter_folder()
 
-        Z = self.hierarchical_cluster()
+        Z = co_analysis.get_hierarchical_cluster()
         self.T = flatten(Z, 1-self.co_cut)
         self.number = max(self.T)
+
+    def get_co_analysis(self):
+        return self.co_analysis
 
     def get_parameter_folder(self):
         return self.parameter_folder
@@ -320,7 +337,8 @@ class FlatClusters(CoAnalysis):
         each cluster (cluster n at postion n-1).
         '''
         flat = self.list_flat_cluster()
-        ids = self.list_curve_indexes()
+        coa = self.co_analysis
+        ids = coa.list_curve_indexes()
         cluster_list = self.list_cluster_ids()
         clusters = []
         for c in cluster_list:
@@ -353,6 +371,7 @@ class Cluster:
         
         self.cluster_number = cluster_number
         self.flat = flat_cluster
+        self.co_analysis = flat_cluster.get_co_analysis()
         self.indexes = flat_cluster.curves_by_cluster()[cluster_number-1]
 
         self.min_coincidence = flat_cluster.get_min_coincidence()
@@ -392,45 +411,48 @@ class Cluster:
         '''
         Return the string names for each curve in this cluster.
         '''
-        flat_names = self.flat.list_curve_names()
+        coa = self.co_analysis
+        flat_names = coa.list_curve_names()
         return [flat_names[i] for i in self.indexes]
 
     def list_density_files(self):
         '''
         Returns a list of the locations of the density files for this cluster.
         '''
-        flat_files = self.flat.list_density_files()
+        coa = self.co_analysis
+        flat_files = coa.list_density_files()
         return [flat_files[i] for i in self.indexes]
 
     def list_tss_force_files(self):
         '''
         Returns a list of the locations of the tss_force files for this cluster.
         '''
-        flat_files = self.flat.list_tss_force_files()
+        coa = self.co_analysis
+        flat_files = coa.list_tss_force_files()
         return [flat_files[i] for i in self.indexes]
 
     def list_cluster_coincidences(self):
-        flat = self.get_flat_cluster()
+        coa = self.co_analysis
         indexes = self.list_curve_indexes()
         coincidence = []
         i = 0
         while i < len(indexes):
             k = i+1
             while k < len(indexes):
-                coincidence.append(flat.map_pair_to_coincidence(indexes[i], indexes[k]))
+                coincidence.append(round(coa.map_pair_to_coincidence(indexes[i], indexes[k]),5))
                 k = k+1
             i = i+1
         return coincidence
 
-    def list_cluster_shift(self):
-        flat = self.get_flat_cluster()
+    def list_cluster_shifts(self):
+        coa = self.co_analysis
         indexes = self.list_curve_indexes()
         shift = []
         i = 0
         while i < len(indexes):
             k = i+1
             while k < len(indexes):
-                shift.append(round(flat.map_pair_to_shift(indexes[i], indexes[k]),4))
+                shift.append(round(coa.map_pair_to_shift(indexes[i], indexes[k]),4))
                 k = k+1
             i = i+1
         return shift
@@ -444,5 +466,5 @@ class Cluster:
 
     def get_shifted_Lc_density_arrays(self):
         Lc_density_list = self.get_Lc_density_arrays()
-        shift_list = self.list_cluster_shift()
+        shift_list = self.list_cluster_shifts()
 
