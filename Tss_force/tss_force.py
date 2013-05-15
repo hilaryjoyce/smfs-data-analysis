@@ -54,8 +54,8 @@ def saveTssForce(folder, type, k = 0):
         Should only be executed once for all files in
         a given experiment or it's rather redundant.'''
     import os
-    if not os.path.isdir("%sTss_Force_data/" % folder):
-        os.mkdir("%sTss_Force_data/" % folder)
+    if not os.path.isdir("%sTss_Force_text/" % folder):
+        os.mkdir("%sTss_Force_text/" % folder)
 
     tf_list, curve_number_list = tss_force_list(folder, type, k=k)
     i = 0
