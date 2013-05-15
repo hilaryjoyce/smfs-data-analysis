@@ -15,7 +15,6 @@ def saveKDE(folder, covfac = 8, delta = 0.25, min_x = 0, max_x = 600):
     '''New density folder assumes list folder begins with List_'''
     import os
     density_folder = "%sDensity_text/" % folder
-    print density_folder
     if not os.path.isdir(density_folder):
         os.mkdir(density_folder)
 
