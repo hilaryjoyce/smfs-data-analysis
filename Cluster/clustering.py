@@ -181,7 +181,7 @@ class CoAnalysis(object):
         Z = linkage(1-self.co_array, method='complete')
         return Z
 
-    def plot_dendrogram(self):
+    def plot_dendrogram(self, Z = None):
         '''
         Plots the dendragram visualization of Z and returns
         the dendrogram object 'dendro'.
@@ -189,9 +189,13 @@ class CoAnalysis(object):
         from scipy.cluster.hierarchy import dendrogram
         import matplotlib.pyplot as plt
 
-        h_clustering = self.hierarchical_cluster()
+        if Z == None:
+            h_clustering = self.hierarchical_cluster()
+        else:
+            h_clustering = Z
 
-        dendro = dendrogram(h_clustering, no_labels=True, count_sort=False, orientation="left");
+        dendro = dendrogram(h_clustering, no_labels=True, 
+            count_sort=True, orientation="left");
         plt.title("Clustering Diagram for N = 3201", fontsize = 14)
         plt.xlabel("Coincidence Metric ($\Gamma$)", fontsize = 14)
         plt.ylabel("Clusters", fontsize = 14)

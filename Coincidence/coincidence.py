@@ -61,7 +61,7 @@ def saveCoincidence(folder, shift = 'No'):
     if shift == 'No':
         savefolder = "NoShift/"
     else:
-        savefolder = "Shift_%d/" % shift
+        savefolder = "Shift_%d/" % int(shift)
 
     if not os.path.isdir(folder+savefolder):
         os.mkdir(folder+savefolder)
