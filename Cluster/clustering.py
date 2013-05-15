@@ -401,8 +401,83 @@ class Cluster:
         shift_list = self.list_cluster_shifts()
 
 
+class SubCluster:
 
-'''
+    def __init__(self, flat_cluster, cluster):
+        from scipy.cluster.hierarchy import to_tree
+        from numpy import asarray
+
+        self.flat = flat_cluster # FlatClusters object
+        self.co_analysis = self.flat.get_co_analysis() #CoAnalysis object
+        self.cluster = cluster #Cluster object
+
+        self.curve_list = cluster.list_curve_indexes()
+        self.Z = self.co_analysis.get_hierarchical_cluster()
+
+        tree = to_tree(self.Z)
+        curves = asarray(self.curve_list)
+        self.id, self.left_list, self.right_list = cluster_node_left_right(tree, tree.left, tree.right, curves)
+    
+    def get_cluster_size(self, subcluster):
+        if subcluster == 'left' or subcluster == 'l':
+            indexes = self.left_list
+        if subcluster == 'right' or subcluster == 'r':
+            indexes = self.right_list
+        return len(indexes)
+
+    def list_curve_indexes(self, subcluster):
+        if subcluster == 'left' or subcluster == 'l':
+            indexes = self.left_list
+        if subcluster == 'right' or subcluster == 'r':
+            indexes = self.right_list
+        return indexes
+
+    def list_curve_names(self, subcluster):
+        if subcluster == 'left' or subcluster == 'l':
+            indexes = self.left_list
+        if subcluster == 'right' or subcluster == 'r':
+            indexes = self.right_list
+        coa = self.co_analysis
+        names = coa.list_curve_names()
+        return [names[i] for i in indexes]
+
+    def list_density_files(self, subcluster):
+        if subcluster == 'left' or subcluster == 'l':
+            indexes = self.left_list
+        if subcluster == 'right' or subcluster == 'r':
+            indexes = self.right_list
+        coa = self.co_analysis
+        flat_files = coa.list_density_files()
+        return [flat_files[i] for i in indexes]
+
+    def get_Lc_density_arrays(self, subcluster):
+        density_files = self.list_density_files(subcluster)
+        Lc_density_list = []
+        for file in density_files:
+            Lc_density_list.append(load2Col(file))
+        return Lc_density_list
+
+    def list_cluster_shifts(self, subcluster):
+        ''' Not sure if this is right.'''
+        coa = self.co_analysis
+        indexes = self.list_curve_indexes(subcluster)
+        shift = []
+        i = 0
+        while i < len(indexes):
+            k = i+1
+            while k < len(indexes):
+                shift.append(round(coa.map_pair_to_shift(indexes[i], indexes[k]),4))
+                k = k+1
+            i = i+1
+        return shift
+
+    def list_initial_shifts(self, subcluster):
+        shift_list = self.list_cluster_shifts(subcluster)
+        N = self.get_cluster_size(subcluster)
+        initial_shifts = [0] + shift_list[0:N-1]
+        return initial_shifts
+
+''' 
 Extraneous functions not in any object.
 --------------------------------------
 '''
@@ -540,19 +615,25 @@ def any_pre_order(root, node):
                 k = k - 1
     return preorder
 
-def flat_to_node_id(root, left, right, curves):
-    ''' FIX UP TO BE OUTSIDE IPYTHON '''
-    left_list = sort(asarray(c.any_pre_order(root, left)))
-    right_list = sort(asarray(c.any_pre_order(root, right)))
-    if all(curves == left_list):
-        return left.get_id(), c.any_pre_order(root, left.left), c.any_pre_order(root, left.right)
-    elif all(curves == right_list):
-        return right.get_id(), c.any_pre_order(root, right.left), c.any_pre_order(root, right.right)
+def cluster_node_left_right(root, left, right, curves):
+    ''' 
+    Takes a root node, the starting left and right nodes, and the curve array 
+    you are trying to find.
+    Returns the corresponding node index in the tree, and the two contained
+    clusters (left and right) by curve index lists.
+    '''
+    from numpy import asarray, sort
+    left_list = sort(asarray(any_pre_order(root, left)))
+    right_list = sort(asarray(any_pre_order(root, right)))
+    if len(left_list) == len(curves) and all(curves == left_list):
+        return left.get_id(), any_pre_order(root, left.left), any_pre_order(root, left.right)
+    elif len(right_list) == len(curves) and all(curves == right_list):
+        return right.get_id(), any_pre_order(root, right.left), any_pre_order(root, right.right)
     else:
-        if any(curves[0] == left_list):
-            return flat_to_node_id(root, left.left, left.right, curves)
-        elif any(curves[0] == right_list):
-            return flat_to_node_id(root, right.left, right.right, curves)
+        if len(left_list) > len(curves) and any(curves[0] == left_list):
+            return cluster_node_left_right(root, left.left, left.right, curves)
+        elif len(right_list) > len(curves) and any(curves[0] == right_list):
+            return cluster_node_left_right(root, right.left, right.right, curves)
         else:
             return "Error?"
 
