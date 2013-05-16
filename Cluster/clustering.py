@@ -409,7 +409,7 @@ class Cluster:
 
 class SubCluster:
 
-    def __init__(self, flat_cluster, cluster):
+    def __init__(self, flat_cluster, cluster = None, curve_list = None):
         from scipy.cluster.hierarchy import to_tree
         from numpy import asarray, sort
 
@@ -417,15 +417,27 @@ class SubCluster:
         self.co_analysis = self.flat.get_co_analysis() #CoAnalysis object
         self.cluster = cluster #Cluster object
 
-        self.curve_list = cluster.list_curve_indexes()
+        if not cluster == None:
+            self.curve_list = cluster.list_curve_indexes()
+        else:
+            self.curve_list = curve_list
+
         self.Z = self.co_analysis.get_hierarchical_cluster()
 
-        tree = to_tree(self.Z)
+        root = to_tree(self.Z) # root of entire cluster!
+        curves = asarray(self.curve_list) # list of curves in this cluster
 
-        curves = asarray(self.curve_list)
-        self.id, left_list, right_list = cluster_node_left_right(tree, tree.left, tree.right, curves)
-        self.left_list = sort(left_list)
-        self.right_list = sort(right_list)
+        # Get the cluster node that corresponds to the curves in the cluster above
+        self.cluster_node = get_cluster_node(root, root.left, root.right, curves)
+        self.id = self.cluster_node.get_id()
+
+        # Get the right and left cluster nodes
+        self.left = self.cluster_node.left
+        self.right = self.cluster_node.right
+
+        # Get the left and right cluster lists
+        self.left_list = sort(any_pre_order(root, self.left))
+        self.right_list = sort(any_pre_order(root, self.right))
 
     def subcluster_properties(self, property = None):
         ''' 
@@ -448,6 +460,14 @@ class SubCluster:
             return (self.list_initial_shifts('l'), self.list_initial_shifts('r'))
         else:
             return ('left', 'right')
+
+    def get_cluster_node(self, subcluster = 'subcluster'):
+        if subcluster == 'left' or subcluster == 'l':
+            return self.left
+        elif subcluster == 'right' or subcluster == 'r':
+            return self.right
+        else:
+            return self.cluster_node
 
     def get_cluster_size(self, subcluster):
         if subcluster == 'left' or subcluster == 'l':
@@ -521,7 +541,9 @@ class SubCluster:
         plt.xlim(0,max_x)
         plt.xlabel("Contour Length (nm)")
         plt.ylabel("Density")
-        plt.title("Subcluster %s of %d curves" % (subcluster, self.get_cluster_size(subcluster)))
+        plt.title("Subcluster %d (%d %s) of %d curves" % \
+            (self.get_cluster_node(subcluster).get_id(), self.get_cluster_node().get_id(), \
+                subcluster, self.get_cluster_size(subcluster)))
         return plt.gcf()
 
     def plot_subcluster_noshift(self, subcluster, max_x = 150):
@@ -535,7 +557,9 @@ class SubCluster:
         plt.xlim(0,max_x)
         plt.xlabel("Contour Length (nm)")
         plt.ylabel("Density")
-        plt.title("Subcluster %s of %d curves" % (subcluster, self.get_cluster_size(subcluster)))
+        plt.title("Subcluster %d (%d %s) of %d curves" % \
+            (self.get_cluster_node(subcluster).get_id(), self.get_cluster_node().get_id(), \
+                subcluster, self.get_cluster_size(subcluster)))
         return plt.gcf()
 
     def plot_both_subclusters(self, max_x = 150):
@@ -552,7 +576,7 @@ Extraneous functions not in any object.
 '''
 
 def load_coincidence(fileName):
-    #checkign these
+    #checking these
     '''Loads a single coincidence_report.txt file.
     Returns curve1, curve2, coincidence, shift as lists.'''
     from numpy import asarray
@@ -684,7 +708,7 @@ def any_pre_order(root, node):
                 k = k - 1
     return preorder
 
-def cluster_node_left_right(root, left, right, curves):
+def get_cluster_node(root, left, right, curves):
     ''' 
     Takes a root node, the starting left and right nodes, and the curve array 
     you are trying to find.
@@ -695,14 +719,14 @@ def cluster_node_left_right(root, left, right, curves):
     left_list = sort(asarray(any_pre_order(root, left)))
     right_list = sort(asarray(any_pre_order(root, right)))
     if len(left_list) == len(curves) and all(curves == left_list):
-        return left, any_pre_order(root, left.left), any_pre_order(root, left.right)
+        return left
     elif len(right_list) == len(curves) and all(curves == right_list):
-        return right.get_id(), any_pre_order(root, right.left), any_pre_order(root, right.right)
+        return right
     else:
         if len(left_list) > len(curves) and any(curves[0] == left_list):
-            return cluster_node_left_right(root, left.left, left.right, curves)
+            return get_cluster_node(root, left.left, left.right, curves)
         elif len(right_list) > len(curves) and any(curves[0] == right_list):
-            return cluster_node_left_right(root, right.left, right.right, curves)
+            return get_cluster_node(root, right.left, right.right, curves)
         else:
             return "Error?"
 
