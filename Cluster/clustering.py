@@ -406,6 +406,26 @@ class Cluster:
         Lc_density_list = self.get_Lc_density_arrays()
         shift_list = self.list_cluster_shifts()
 
+    def plot_cluster(self, alpha = 0.5, max_x = 150):
+        import matplotlib.pyplot as plt
+        from numpy import average
+        Lc_density_list = self.get_Lc_density_arrays()
+        initial_shifts = self.list_initial_shifts()
+        av_shift = average(initial_shifts)
+        co = self.get_min_coincidence()
+
+        i = 0
+        for Lc_density in Lc_density_list:
+            plt.plot(Lc_density[0] + initial_shifts[i] - av_shift, Lc_density[1], 'k-', alpha=alpha)
+            i = i+1
+        plt.xlim(0,max_x)
+
+        max_y = plt.axis()[3]
+        plt.text(max_x/1.5, max_y/1.5, '$\Gamma\geq$ %.3f' % co, size = 16)
+
+        plt.xlabel("Contour Length (nm)")
+        plt.ylabel("Density")
+        plt.title("Cluster of %d curves at co = %g" % (self.get_cluster_size(), self.get_min_coincidence()))
 
 class SubCluster:
 
@@ -476,6 +496,13 @@ class SubCluster:
             indexes = self.right_list
         return len(indexes)
 
+    def get_cluster_coincidence(self, subcluster):
+        if subcluster == 'left' or subcluster == 'l':
+            cluster = self.left
+        if subcluster == 'right' or subcluster == 'r':
+            cluster = self.right
+        return 1-cluster.dist
+
     def list_curve_indexes(self, subcluster):
         if subcluster == 'left' or subcluster == 'l':
             indexes = self.left_list
@@ -528,17 +555,22 @@ class SubCluster:
         initial_shifts = [0] + shift_list[0:N-1]
         return initial_shifts
 
-    def plot_subcluster(self, subcluster, max_x = 150):
+    def plot_subcluster(self, subcluster, max_x = 150, alpha = 0.5):
         import matplotlib.pyplot as plt
         from numpy import average
         Lc_density_list = self.get_Lc_density_arrays(subcluster)
         initial_shifts = self.list_initial_shifts(subcluster)
         av_shift = average(initial_shifts)
+        co = self.get_cluster_coincidence(subcluster)
         i = 0
         for Lc_density in Lc_density_list:
-            plt.plot(Lc_density[0] + initial_shifts[i] - av_shift, Lc_density[1], 'k-', alpha=0.5)
+            plt.plot(Lc_density[0] + initial_shifts[i] - av_shift, Lc_density[1], 'k-', alpha=alpha)
             i = i+1
         plt.xlim(0,max_x)
+        
+        max_y = plt.axis()[3]
+        plt.text(max_x/1.5, max_y/1.5, '$\Gamma\geq$ %.3f' % co, size = 16)
+
         plt.xlabel("Contour Length (nm)")
         plt.ylabel("Density")
         plt.title("Subcluster %d (%d %s) of %d curves" % \
@@ -546,13 +578,13 @@ class SubCluster:
                 subcluster, self.get_cluster_size(subcluster)))
         return plt.gcf()
 
-    def plot_subcluster_noshift(self, subcluster, max_x = 150):
+    def plot_subcluster_noshift(self, subcluster, max_x = 150, alpha = 0.5):
         import matplotlib.pyplot as plt
         from numpy import average
         Lc_density_list = self.get_Lc_density_arrays(subcluster)
         i = 0
         for Lc_density in Lc_density_list:
-            plt.plot(Lc_density[0], Lc_density[1], 'k-', alpha=0.5)
+            plt.plot(Lc_density[0], Lc_density[1], 'k-', alpha=alpha)
             i = i+1
         plt.xlim(0,max_x)
         plt.xlabel("Contour Length (nm)")
@@ -563,12 +595,11 @@ class SubCluster:
         return plt.gcf()
 
     def plot_both_subclusters(self, max_x = 150):
-        from matplotlib.pyplot import subplot, show
+        from matplotlib.pyplot import subplot
         subplot(121)
         self.plot_subcluster('left', max_x = max_x)
         subplot(122)
         self.plot_subcluster('right', max_x = max_x)
-        show()
 
 ''' 
 Extraneous functions not in any object.
