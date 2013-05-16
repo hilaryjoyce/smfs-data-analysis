@@ -279,8 +279,6 @@ class FlatClusters:
             clusters.append([id for id in ids if flat[id] == c])
         return clusters
 
-
-
 class Cluster:
 
     '''
@@ -482,6 +480,10 @@ class SubCluster:
             return ('left', 'right')
 
     def get_cluster_node(self, subcluster = 'subcluster'):
+        ''' 
+        Returns the ClusterNode object referring to either the supercluster
+        or the left and right subclusters.
+        ''' 
         if subcluster == 'left' or subcluster == 'l':
             return self.left
         elif subcluster == 'right' or subcluster == 'r':
@@ -490,13 +492,17 @@ class SubCluster:
             return self.cluster_node
 
     def get_cluster_size(self, subcluster):
+        '''Return size of the left or right subclusters'''
         if subcluster == 'left' or subcluster == 'l':
             indexes = self.left_list
-        if subcluster == 'right' or subcluster == 'r':
+        elif subcluster == 'right' or subcluster == 'r':
             indexes = self.right_list
         return len(indexes)
 
     def get_cluster_coincidence(self, subcluster):
+        '''
+        Returns the minimum coincidence for the left or right clusters.
+        '''
         if subcluster == 'left' or subcluster == 'l':
             cluster = self.left
         if subcluster == 'right' or subcluster == 'r':
@@ -504,6 +510,9 @@ class SubCluster:
         return 1-cluster.dist
 
     def list_curve_indexes(self, subcluster):
+        '''
+        Returns an ordered list of curve ids.
+        '''
         if subcluster == 'left' or subcluster == 'l':
             indexes = self.left_list
         if subcluster == 'right' or subcluster == 'r':
@@ -511,6 +520,9 @@ class SubCluster:
         return indexes
 
     def list_curve_names(self, subcluster):
+        '''
+        Returns a list of the cluster names in the left or right clusters.
+        '''
         if subcluster == 'left' or subcluster == 'l':
             indexes = self.left_list
         if subcluster == 'right' or subcluster == 'r':
@@ -520,6 +532,9 @@ class SubCluster:
         return [names[i] for i in indexes]
 
     def list_density_files(self, subcluster):
+        '''
+        Returns a list of the density files in the specified subcluster.
+        '''
         if subcluster == 'left' or subcluster == 'l':
             indexes = self.left_list
         if subcluster == 'right' or subcluster == 'r':
@@ -529,6 +544,10 @@ class SubCluster:
         return [flat_files[i] for i in indexes]
 
     def get_Lc_density_arrays(self, subcluster):
+        '''
+        Returns a list of pairs of the Lc_arrays and density_arrays for 
+        the specified subcluster {left, right}.
+        '''
         density_files = self.list_density_files(subcluster)
         Lc_density_list = []
         for file in density_files:
@@ -536,7 +555,9 @@ class SubCluster:
         return Lc_density_list
 
     def list_curve_shifts(self, subcluster):
-        ''' Not sure if this is right.'''
+        ''' 
+        Returns a list of all shifts for this subcluster.
+        '''
         coa = self.co_analysis
         indexes = self.list_curve_indexes(subcluster)
         shift = []
@@ -550,12 +571,16 @@ class SubCluster:
         return shift
 
     def list_initial_shifts(self, subcluster):
+        '''
+        Returns a list of the initial shifts to apply to align curves
+        in the specified subcluster.
+        '''
         shift_list = self.list_curve_shifts(subcluster)
         N = self.get_cluster_size(subcluster)
         initial_shifts = [0] + shift_list[0:N-1]
         return initial_shifts
 
-    def plot_subcluster(self, subcluster, max_x = 150, alpha = 0.5):
+    def plot_subcluster(self, subcluster, max_x = 150, alpha = 0.5, average=False):
         import matplotlib.pyplot as plt
         from numpy import average
         Lc_density_list = self.get_Lc_density_arrays(subcluster)
@@ -566,6 +591,9 @@ class SubCluster:
         for Lc_density in Lc_density_list:
             plt.plot(Lc_density[0] + initial_shifts[i] - av_shift, Lc_density[1], 'k-', alpha=alpha)
             i = i+1
+        
+        if average:
+            print "Code the average here."
         plt.xlim(0,max_x)
         
         max_y = plt.axis()[3]
@@ -595,7 +623,8 @@ class SubCluster:
         return plt.gcf()
 
     def plot_both_subclusters(self, max_x = 150):
-        from matplotlib.pyplot import subplot
+        from matplotlib.pyplot import subplot, figsize
+        figsize(12,4)
         subplot(121)
         self.plot_subcluster('left', max_x = max_x)
         subplot(122)
@@ -658,6 +687,9 @@ def load2Col(fileName, header=True, col1_num=True):
     return [A, B]
 
 def curve_files(param_folder, file_type = 'None'):
+    '''
+    Import all the filenames of a certain type.
+    '''
     import re
     from glob import glob
     if file_type == 'tss_force':
@@ -686,6 +718,7 @@ def hierarchical(co_report_file):
     return Z
 
 def flatten(Z, t):
+    '''Wrapper on fcluster.'''
     from scipy.cluster.hierarchy import fcluster
     return fcluster(Z, t, criterion='distance')
 
