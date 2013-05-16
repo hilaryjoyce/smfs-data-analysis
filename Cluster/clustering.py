@@ -46,6 +46,10 @@ class CoAnalysis(object):
         l3 = 'Number of curves = %d\n' % len(self.list_curve_names())
         return l1+l2+l3
 
+    def get_sample_size(self):
+        '''Returns the number of initial data points.'''
+        return len(self.tss_force_files)
+
     def get_coincidence_array(self):
         '''Returns the array of coincidence values.'''
         return self.co_array
@@ -106,9 +110,11 @@ class CoAnalysis(object):
         Plots the dendragram visualization of Z and returns
         the dendrogram object 'dendro'.
         '''
-        from scipy.cluster.hierarchy import dendrogram
+        from scipy.cluster.hierarchy import dendrogram, set_link_color_palette
         import matplotlib.pyplot as plt
 
+        cpool = ["#1F78B4", "#E31A1C", "#A6CEE3", "#FB9A99", "#7BCCC4", "#B2DF8A", "#33A02C", "#02818A", "#FF7F00", "#FDBF6F", "#CAB2D6", "#6A3D9A", "#BFD3E6", "#8C96C6"]
+        set_link_color_palette(cpool)
         h_clustering = self.Z
 
         dendro = dendrogram(h_clustering, no_labels=True, 
