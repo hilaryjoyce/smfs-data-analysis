@@ -411,7 +411,7 @@ class SubCluster:
 
     def __init__(self, flat_cluster, cluster):
         from scipy.cluster.hierarchy import to_tree
-        from numpy import asarray
+        from numpy import asarray, sort
 
         self.flat = flat_cluster # FlatClusters object
         self.co_analysis = self.flat.get_co_analysis() #CoAnalysis object
@@ -421,9 +421,34 @@ class SubCluster:
         self.Z = self.co_analysis.get_hierarchical_cluster()
 
         tree = to_tree(self.Z)
+
         curves = asarray(self.curve_list)
-        self.id, self.left_list, self.right_list = cluster_node_left_right(tree, tree.left, tree.right, curves)
-    
+        self.id, left_list, right_list = cluster_node_left_right(tree, tree.left, tree.right, curves)
+        self.left_list = sort(left_list)
+        self.right_list = sort(right_list)
+
+    def subcluster_properties(self, property = None):
+        ''' 
+        Returns a tuple of the left, right subcluster properties asked for in "property".
+        property = {size, indexes, names, density_files, Lc_density, shifts, initial_shifts}
+        '''
+        if property == 'size':
+            return (self.get_cluster_size('l'), self.get_cluster_size('r'))
+        elif property == 'indexes':
+            return (self.list_curve_indexes('l'), self.list_curve_indexes('r'))
+        elif property == 'names':
+            return (self.list_curve_names('l'), self.list_curve_names('r'))
+        elif property == 'density_files':
+            return (self.list_density_files('l'), self.list_density_files('r'))
+        elif property == 'Lc_density':
+            return (self.get_Lc_density_arrays('l'), self.get_Lc_density_arrays('r'))
+        elif property == 'shifts':
+            return (self.list_curve_shifts('l'), self.list_curve_shifts('r'))
+        elif property == "initial_shifts":
+            return (self.list_initial_shifts('l'), self.list_initial_shifts('r'))
+        else:
+            return ('left', 'right')
+
     def get_cluster_size(self, subcluster):
         if subcluster == 'left' or subcluster == 'l':
             indexes = self.left_list
@@ -463,7 +488,7 @@ class SubCluster:
             Lc_density_list.append(load2Col(file))
         return Lc_density_list
 
-    def list_cluster_shifts(self, subcluster):
+    def list_curve_shifts(self, subcluster):
         ''' Not sure if this is right.'''
         coa = self.co_analysis
         indexes = self.list_curve_indexes(subcluster)
@@ -478,10 +503,48 @@ class SubCluster:
         return shift
 
     def list_initial_shifts(self, subcluster):
-        shift_list = self.list_cluster_shifts(subcluster)
+        shift_list = self.list_curve_shifts(subcluster)
         N = self.get_cluster_size(subcluster)
         initial_shifts = [0] + shift_list[0:N-1]
         return initial_shifts
+
+    def plot_subcluster(self, subcluster, max_x = 150):
+        import matplotlib.pyplot as plt
+        from numpy import average
+        Lc_density_list = self.get_Lc_density_arrays(subcluster)
+        initial_shifts = self.list_initial_shifts(subcluster)
+        av_shift = average(initial_shifts)
+        i = 0
+        for Lc_density in Lc_density_list:
+            plt.plot(Lc_density[0] + initial_shifts[i] - av_shift, Lc_density[1], 'k-', alpha=0.5)
+            i = i+1
+        plt.xlim(0,max_x)
+        plt.xlabel("Contour Length (nm)")
+        plt.ylabel("Density")
+        plt.title("Subcluster %s of %d curves" % (subcluster, self.get_cluster_size(subcluster)))
+        return plt.gcf()
+
+    def plot_subcluster_noshift(self, subcluster, max_x = 150):
+        import matplotlib.pyplot as plt
+        from numpy import average
+        Lc_density_list = self.get_Lc_density_arrays(subcluster)
+        i = 0
+        for Lc_density in Lc_density_list:
+            plt.plot(Lc_density[0], Lc_density[1], 'k-', alpha=0.5)
+            i = i+1
+        plt.xlim(0,max_x)
+        plt.xlabel("Contour Length (nm)")
+        plt.ylabel("Density")
+        plt.title("Subcluster %s of %d curves" % (subcluster, self.get_cluster_size(subcluster)))
+        return plt.gcf()
+
+    def plot_both_subclusters(self, max_x = 150):
+        from matplotlib.pyplot import subplot, show
+        subplot(121)
+        self.plot_subcluster('left', max_x = max_x)
+        subplot(122)
+        self.plot_subcluster('right', max_x = max_x)
+        show()
 
 ''' 
 Extraneous functions not in any object.
@@ -517,8 +580,8 @@ def load_coincidence(fileName):
     return curve1, curve2, co, shift
 
 def load2Col(fileName, header=True, col1_num=True):
-    from numpy import asarray
     ''' Takes a file with two columns and return each as an array. '''
+    from numpy import asarray
     A = []
     B = []
     file = open(fileName, 'r')
@@ -632,7 +695,7 @@ def cluster_node_left_right(root, left, right, curves):
     left_list = sort(asarray(any_pre_order(root, left)))
     right_list = sort(asarray(any_pre_order(root, right)))
     if len(left_list) == len(curves) and all(curves == left_list):
-        return left.get_id(), any_pre_order(root, left.left), any_pre_order(root, left.right)
+        return left, any_pre_order(root, left.left), any_pre_order(root, left.right)
     elif len(right_list) == len(curves) and all(curves == right_list):
         return right.get_id(), any_pre_order(root, right.left), any_pre_order(root, right.right)
     else:
