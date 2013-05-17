@@ -83,17 +83,29 @@ def saveCoincidence(folder, shift = 'No'):
 
     file.close()
 
-def absCoincidence(lc, d1, d2, mode='full'):
+def absCoincidence(lc, d1, d2, shift='No'):
     '''Runs in one function. Most efficient.'''
     from scipy.signal import fftconvolve
     from numpy import dot, sqrt, where, log10
 
     dx = lc[1]-lc[0]
-    fft_flip = fftconvolve(d1, d2[::-1], mode=mode)
-    max_conv = max(fft_flip)
-    max_id = where(fft_flip == max_conv)[0][0]
 
-    if mode == 'full':        
+    if shift == 0:
+        fft_flip = fftconvolve(d1, d2[::-1], mode='valid')
+    else:
+        fft_flip = fftconvolve(d1, d2[::-1], mode='full')
+
+    if shift == 'No' or shift == 0:
+        max_conv = max(fft_flip)
+        max_id = where(fft_flip == max_conv)[0][0]
+        if shift != 0:        
+            max_id = max_id - len(fft_flip)/2
+    else:
+        shift_id = shift/dx
+        shift_left = int(- shift_id + len(fft_flip)/2)
+        shift_right = int(shift_id + len(fft_flip)/2)
+        max_conv = max(fft_flip[shift_left:shift_right])
+        max_id = where(fft_flip == max_conv)[0][0]
         max_id = max_id - len(fft_flip)/2
 
     max_lc = max_id*dx
@@ -108,7 +120,14 @@ def absCoincidence(lc, d1, d2, mode='full'):
     
     Gamma = max_conv / sqrt(dot_d1 * dot_d2) * s
 
-    return round(Gamma,5), max_id, round(max_lc, int(-1*log10(dx)+1))
+    return round(Gamma,5), max_id, round(max_lc, int(-1*log10(dx)+2))
+
+
+''' 
+Separate functions 
+------------------
+'''
+
 
 def fft_convolution(lc, d1, d2):
     '''Use fast fourier transform to find max correlation'''
