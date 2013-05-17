@@ -6,13 +6,52 @@
         - shift (currently not even using this parameter)
 '''
 
-def CoincidenceList(folder, shift = 'No'):
-    from glob import glob
-    mode = 'full'
-    if shift == 'No':
-        mode = 'full'
+def absCoincidence(lc, d1, d2, shift='No'):
+    '''Runs in one function. Most efficient.'''
+    from scipy.signal import fftconvolve
+    from numpy import dot, sqrt, where, log10
+
+    dx = lc[1]-lc[0]
+
     if shift == 0:
-        mode = 'valid'
+        fft_flip = fftconvolve(d1, d2[::-1], mode='valid')
+    else:
+        fft_flip = fftconvolve(d1, d2[::-1], mode='full')
+
+    if shift == 'No' or shift == 0:
+        max_conv = max(fft_flip)
+        max_id = where(fft_flip == max_conv)[0][0]
+        if shift != 0:        
+            max_id = max_id - len(fft_flip)/2
+    else:
+        shift_id = shift/dx
+        shift_left = int(- shift_id + len(fft_flip)/2)
+        shift_right = int(shift_id + len(fft_flip)/2)
+        max_conv = max(fft_flip[shift_left:shift_right])
+        max_id = where(fft_flip == max_conv)[0][0]
+        max_id = max_id - len(fft_flip)/2
+
+    max_lc = max_id*dx
+
+    dot_d1 = dot(d1, d1)
+    dot_d2 = dot(d2, d2)
+
+    if (dot_d1 <= dot_d2):
+        s = sqrt(dot_d1/dot_d2)
+    else:
+        s = sqrt(dot_d2/dot_d1)
+    
+    Gamma = max_conv / sqrt(dot_d1 * dot_d2) * s
+
+    return round(Gamma,5), max_id, round(max_lc, int(-1*log10(dx)+2))
+
+
+def CoincidenceList(folder, shift = 'No'):
+    '''
+    Calculates a list of the maximum coincidence and corresponding shift 
+    for ONE particular shift.
+    '''
+    from glob import glob
     densityFiles = glob("%sDensity_text/*.txt" % folder)
     
     eps = 10**(-3) # fixinig this since I haven't changed it in so long I forget what it means...
@@ -39,7 +78,7 @@ def CoincidenceList(folder, shift = 'No'):
                 else:
                     Gamma, u_max, x_max = 0, 0, 0
             else:
-                Gamma, u_max, x_max = absCoincidence(c1, d1, d2, mode)
+                Gamma, u_max, x_max = absCoincidence(c1, d1, d2, shift)
             curve1_list.append(curveNum1)
             curve2_list.append(curveNum2)
             gamma_list.append(Gamma)
@@ -83,44 +122,140 @@ def saveCoincidence(folder, shift = 'No'):
 
     file.close()
 
-def absCoincidence(lc, d1, d2, shift='No'):
-    '''Runs in one function. Most efficient.'''
+def multipleCoincidence(lc, d1, d2, shift_list):
+    '''
+    Calculates the coincidence value and associating shift for a list of maximum shifts
+    for a single pair of curves.
+    '''
     from scipy.signal import fftconvolve
     from numpy import dot, sqrt, where, log10
 
     dx = lc[1]-lc[0]
+    fft_flip = fftconvolve(d1, d2[::-1], mode='full')
 
-    if shift == 0:
-        fft_flip = fftconvolve(d1, d2[::-1], mode='valid')
-    else:
-        fft_flip = fftconvolve(d1, d2[::-1], mode='full')
+    Gamma_list = []
+    x_list = []
+    u_list = []
 
-    if shift == 'No' or shift == 0:
-        max_conv = max(fft_flip)
-        max_id = where(fft_flip == max_conv)[0][0]
-        if shift != 0:        
+    for shift in shift_list:
+        if shift == 0:
+            max_conv = fft_flip[len(fft_flip)/2]
+            max_id = 0
+        elif shift == 'No':
+            max_conv = max(fft_flip)
+            max_id = where(fft_flip == max_conv)[0][0]     
             max_id = max_id - len(fft_flip)/2
-    else:
-        shift_id = shift/dx
-        shift_left = int(- shift_id + len(fft_flip)/2)
-        shift_right = int(shift_id + len(fft_flip)/2)
-        max_conv = max(fft_flip[shift_left:shift_right])
-        max_id = where(fft_flip == max_conv)[0][0]
-        max_id = max_id - len(fft_flip)/2
+        else:
+            shift_id = shift/dx
+            shift_left = int(- shift_id + len(fft_flip)/2)
+            shift_right = int(shift_id + len(fft_flip)/2)
+            max_conv = max(fft_flip[shift_left:shift_right])
+            max_id = where(fft_flip == max_conv)[0][0]
+            max_id = max_id - len(fft_flip)/2
 
-    max_lc = max_id*dx
+        max_lc = max_id*dx
 
-    dot_d1 = dot(d1, d1)
-    dot_d2 = dot(d2, d2)
+        dot_d1 = dot(d1, d1)
+        dot_d2 = dot(d2, d2)
 
-    if (dot_d1 <= dot_d2):
-        s = sqrt(dot_d1/dot_d2)
-    else:
-        s = sqrt(dot_d2/dot_d1)
-    
-    Gamma = max_conv / sqrt(dot_d1 * dot_d2) * s
+        if (dot_d1 <= dot_d2):
+            s = sqrt(dot_d1/dot_d2)
+        else:
+            s = sqrt(dot_d2/dot_d1)
+        
+        Gamma = max_conv / sqrt(dot_d1 * dot_d2) * s
+        Gamma_list.append(round(Gamma,5))
+        x_list.append(max_id)
+        u_list.append(round(max_lc, int(-1*log10(dx)+2)))
 
-    return round(Gamma,5), max_id, round(max_lc, int(-1*log10(dx)+2))
+    return Gamma_list, x_list, u_list
+
+def MultipleCoincidenceList(folder, shift_list = [0, 5, 10, 15, 20, 30, 50, 100, 'No']):
+    '''
+    Calculates the maximum coincidence and associated shift for a list of maximum shifts
+    for an entire folder of curves (param_folder).
+    '''
+    from glob import glob
+    densityFiles = glob("%sDensity_text/*.txt" % folder)
+
+    eps = 10**(-3)
+    N = len(densityFiles)
+    M = len(shift_list)
+    count = 0
+    i = 0
+    curve1_list = []
+    curve2_list = []
+    gamma_list = []
+    x_max_list = []
+
+    while (i < len(densityFiles)):
+        curve1 = densityFiles[i]
+        c1, d1 = load2Col(curve1)
+        curveNum1 = curveNumFinder(curve1)
+        k = i + 1
+        while (k < len(densityFiles)):
+            curve2 = densityFiles[k]
+            curveNum2 = curveNumFinder(curve2)
+            c2, d2 = load2Col(curve2)
+            if (max(d1) == 0 or max(d2) == 0):
+                u_max, x_max = [0]*M, [0]*M
+                if (max(d1) == 0 and max(d2) == 0):
+                    Gamma = [1.0]*M
+                else:
+                    Gamma = [0]*M
+            else:
+                g = []
+                u = []
+                x = []
+                for shift in shift_list:
+                    Gamma, u_max, x_max = multipleCoincidence(c1, d1, d2, shift_list)
+            curve1_list.append(curveNum1)
+            curve2_list.append(curveNum2)
+            gamma_list.append(Gamma)
+            x_max_list.append(x_max)
+            k = k+1
+        i += 1
+
+    return [curve1_list, curve2_list, gamma_list, x_max_list]
+
+def saveMultipleCoincidence(folder, shift_list = [0, 5, 10, 15, 20, 30, 50, 100, 'No']):
+    '''Tales a folder specifying the PARAMETERS (not Density_text) folder
+        and saves a coincidence_report.txt file in a shift folder.
+        Currently this guy only does No shift ('valid' absCoincidence)
+        or a full no-shift coincidence for any specified numeric shift.
+    '''
+    import os
+    import sys
+
+    co_matrix = MultipleCoincidenceList(folder, shift_list)
+
+    j = 0
+    for shift in shift_list:
+        if shift == 'No':
+            savefolder = "NoShift/"
+        else:
+            savefolder = "Shift_%d/" % int(shift)
+
+        if not os.path.isdir(folder+savefolder):
+            os.mkdir(folder+savefolder)
+
+        print folder+savefolder
+
+        savefile = "%s%scoincidence_report.txt" % (folder, savefolder)    
+
+        file = open(savefile, 'w')
+        file.write("# c1\tc2\tGamma\tBest shift (nm)\n")
+
+        i = 0
+        N = len(co_matrix[0])
+        while i < len(co_matrix[0]):
+            line = "%s\t%s\t%.3f\t%5.2f\n" % (co_matrix[0][i], co_matrix[1][i], co_matrix[2][i][j], co_matrix[3][i][j])
+            file.write(line)
+            i = i+1
+
+        file.close()
+        j = j+1
+
 
 
 ''' 
