@@ -122,7 +122,7 @@ class CoAnalysis(object):
 
         dendro = dendrogram(h_clustering, no_labels=True, 
             count_sort=True, orientation="left");
-        plt.title("Clustering Diagram for N = 3201", fontsize = 14)
+        plt.title("Clustering Diagram for N = %d" % self.get_sample_size(), fontsize = 14)
         plt.xlabel("Coincidence Metric ($\Gamma$)", fontsize = 14)
         plt.ylabel("Clusters", fontsize = 14)
         plt.xticks([1, 0.8, 0.6, 0.4, 0.2, 0], [0, 0.2, 0.4, 0.6, 0.8, 1])
@@ -420,7 +420,7 @@ class Cluster:
             plt.plot(Lc_density[0] + initial_shifts[i] - av_shift, Lc_density[1], 'k-', alpha=alpha)
             i = i+1
         plt.xlim(0,max_x)
-        plt.yticks([])
+        #plt.yticks([])
         max_y = plt.axis()[3]
         #plt.text(max_x/1.5, max_y/1.5, '$\Gamma\geq$ %.3f' % co, size = 16)
         #plt.xlabel("Contour Length (nm)")
