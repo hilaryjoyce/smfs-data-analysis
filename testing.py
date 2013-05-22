@@ -7,6 +7,6 @@ from Density.kernel_density import saveKDE
 super_folder = '../Data/aLa_flat_all/'
 param_folder = '../Data/aLa_flat_all/Transform_analysis/Parameters_p0.4_minTss5_minForce45/'
 #saveTssForce(super_folder, type='RDF')
-#saveLcList(super_folder)
+param_folder = saveLcList(super_folder)
 saveKDE(param_folder)
 
