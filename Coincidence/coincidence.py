@@ -188,6 +188,9 @@ def MultipleCoincidenceList(folder, shift_list = [0, 5, 10, 15, 20, 30, 50, 100,
     gamma_list = []
     x_max_list = []
 
+    file = open("%s_run_report.txt" % folder, 'w')
+    file.write("First curves completed out of %d:\n" % N)
+
     while (i < len(densityFiles)):
         curve1 = densityFiles[i]
         c1, d1 = load2Col(curve1)
@@ -215,6 +218,9 @@ def MultipleCoincidenceList(folder, shift_list = [0, 5, 10, 15, 20, 30, 50, 100,
             x_max_list.append(x_max)
             k = k+1
         i += 1
+        file.write("Completed %d of %d.\n" % (i, N))
+    
+    file.close()
 
     return [curve1_list, curve2_list, gamma_list, x_max_list]
 
