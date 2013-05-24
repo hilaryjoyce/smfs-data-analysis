@@ -16,15 +16,16 @@ class CoAnalysis(object):
 
         '''
 
-    def __init__(self, parameter_folder, max_shift):
+    def __init__(self, parameter_folder, max_x, max_shift):
         self.parameter_folder = parameter_folder
         self.max_shift = max_shift
+        self.max_x = max_x
 
         # Find correct folder for coincidence data
         if max_shift == 'No':
-            shift_folder = "NoShift/"
+            shift_folder = "Coincidence_max%g/NoShift/" % max_x
         else:
-            shift_folder = "Shift_%d/" % max_shift
+            shift_folder = "Coincidence_max%g/Shift_%d/" % (max_x, max_shift)
 
         self.shift_folder = shift_folder
 
@@ -45,9 +46,10 @@ class CoAnalysis(object):
 
     def __str__(self):
         l1 = self.parameter_folder + '\n'
-        l2 = 'Hierarchical clustering at max_shift = %s\n' % str(self.max_shift)
-        l3 = 'Number of curves = %d\n' % len(self.list_curve_names())
-        return l1+l2+l3
+        l2 = self.shift_folder + '\n'
+        l3 = 'Hierarchical clustering at max_shift = %s\n' % str(self.max_shift)
+        l4 = 'Number of curves = %d\n' % len(self.list_curve_names())
+        return l1+l2+l3+l4
 
     def get_sample_size(self):
         '''Returns the number of initial data points.'''

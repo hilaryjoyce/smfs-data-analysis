@@ -170,14 +170,14 @@ def multipleCoincidence(lc, d1, d2, shift_list):
 
     return Gamma_list, x_list, u_list
 
-def MultipleCoincidenceList(folder, shift_list = [0, 5, 10, 15, 20, 30, 50, 100, 'No']):
+def MultipleCoincidenceList(folder, max_x = 600, shift_list = [0, 5, 10, 15, 20, 30, 50, 100, 'No']):
     '''
     Calculates the maximum coincidence and associated shift for a list of maximum shifts
     for an entire folder of curves (param_folder).
     '''
     from glob import glob
     from time import clock
-    densityFiles = glob("%sDensity_text/*.txt" % folder)
+    densityFiles = glob("%sDensity_text_max%g/*.txt" % (folder, max_x))
 
     eps = 10**(-3)
     N = len(densityFiles)
@@ -228,21 +228,24 @@ def MultipleCoincidenceList(folder, shift_list = [0, 5, 10, 15, 20, 30, 50, 100,
 
     return [curve1_list, curve2_list, gamma_list, x_max_list]
 
-def saveMultipleCoincidence(folder, shift_list = [0, 5, 10, 15, 20, 30, 50, 100, 'No']):
+def saveMultipleCoincidence(folder, max_x = 600, shift_list = [0, 5, 10, 15, 20, 30, 50, 100, 'No']):
     '''Tales a folder specifying the PARAMETERS (not Density_text) folder
         and saves a coincidence_report.txt file in a shift folder.
     '''
     import os
     import sys
 
-    co_matrix = MultipleCoincidenceList(folder, shift_list)
+    co_matrix = MultipleCoincidenceList(folder, max_x, shift_list)
+
+    if not os.path.isdir("%sCoincidence_max%g/" %(folder, max_x)):
+        os.mkdir("%sCoincidence_max%g/" %(folder, max_x))
 
     j = 0
     for shift in shift_list:
         if shift == 'No':
-            savefolder = "NoShift/"
+            savefolder = "Coincidence_max%g/NoShift/" % max_x
         else:
-            savefolder = "Shift_%d/" % int(shift)
+            savefolder = "Coincidence_max%g/Shift_%d/" % (max_x, int(shift))
 
         if not os.path.isdir(folder+savefolder):
             os.mkdir(folder+savefolder)
