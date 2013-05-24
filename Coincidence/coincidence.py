@@ -176,6 +176,7 @@ def MultipleCoincidenceList(folder, shift_list = [0, 5, 10, 15, 20, 30, 50, 100,
     for an entire folder of curves (param_folder).
     '''
     from glob import glob
+    from time import clock
     densityFiles = glob("%sDensity_text/*.txt" % folder)
 
     eps = 10**(-3)
@@ -188,10 +189,11 @@ def MultipleCoincidenceList(folder, shift_list = [0, 5, 10, 15, 20, 30, 50, 100,
     gamma_list = []
     x_max_list = []
 
-    file = open("%s_run_report.txt" % folder, 'w')
+    file = open("%sco_run_report.txt" % folder, 'w')
     file.write("First curves completed out of %d:\n" % N)
 
     while (i < len(densityFiles)):
+        t1 = clock()
         curve1 = densityFiles[i]
         c1, d1 = load2Col(curve1)
         curveNum1 = curveNumFinder(curve1)
@@ -216,10 +218,11 @@ def MultipleCoincidenceList(folder, shift_list = [0, 5, 10, 15, 20, 30, 50, 100,
             curve2_list.append(curveNum2)
             gamma_list.append(Gamma)
             x_max_list.append(x_max)
-            print "Completed %d, %d." % (i, k)
             k = k+1
         i += 1
-        file.write("Completed %d of %d.\n" % (i, N))
+        t2 = clock()
+        print "Completed %d of %d in %g minutes." % (i, N, (t2-t1)/60.0)
+        file.write("Completed %d of %d in %g minutes.\n" % (i, N, (t2-t1)/60.0))
     
     file.close()
 
