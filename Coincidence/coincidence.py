@@ -216,6 +216,7 @@ def MultipleCoincidenceList(folder, shift_list = [0, 5, 10, 15, 20, 30, 50, 100,
             curve2_list.append(curveNum2)
             gamma_list.append(Gamma)
             x_max_list.append(x_max)
+            print "Completed %d, %d." % (i, k)
             k = k+1
         i += 1
         file.write("Completed %d of %d.\n" % (i, N))
@@ -227,8 +228,6 @@ def MultipleCoincidenceList(folder, shift_list = [0, 5, 10, 15, 20, 30, 50, 100,
 def saveMultipleCoincidence(folder, shift_list = [0, 5, 10, 15, 20, 30, 50, 100, 'No']):
     '''Tales a folder specifying the PARAMETERS (not Density_text) folder
         and saves a coincidence_report.txt file in a shift folder.
-        Currently this guy only does No shift ('valid' absCoincidence)
-        or a full no-shift coincidence for any specified numeric shift.
     '''
     import os
     import sys
