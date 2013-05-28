@@ -20,10 +20,13 @@ class CoAnalysis(object):
         self.parameter_folder = parameter_folder
         self.max_shift = max_shift
 
+        # Find correct folder for coincidence data
         if max_shift == 'No':
             shift_folder = "NoShift/"
         else:
             shift_folder = "Shift_%d/" % max_shift
+
+        self.shift_folder = shift_folder
 
         # File names for associated parameters
         self.coincidence_file = "%s%scoincidence_report.txt" % (parameter_folder, shift_folder)
@@ -406,7 +409,7 @@ class Cluster:
 
     def plot_cluster(self, alpha = 0.5, max_x = 150):
         import matplotlib.pyplot as plt
-        from numpy import average
+        from numpy import average, arange
         Lc_density_list = self.get_Lc_density_arrays()
         initial_shifts = self.list_initial_shifts()
         av_shift = average(initial_shifts)
@@ -417,13 +420,14 @@ class Cluster:
             plt.plot(Lc_density[0] + initial_shifts[i] - av_shift, Lc_density[1], 'k-', alpha=alpha)
             i = i+1
         plt.xlim(0,max_x)
-
+        plt.yticks([])
         max_y = plt.axis()[3]
-        plt.text(max_x/1.5, max_y/1.5, '$\Gamma\geq$ %.3f' % co, size = 16)
-
-        plt.xlabel("Contour Length (nm)")
-        plt.ylabel("Density")
-        plt.title("Cluster of %d curves at co = %g" % (self.get_cluster_size(), self.get_min_coincidence()))
+        #plt.text(max_x/1.5, max_y/1.5, '$\Gamma\geq$ %.3f' % co, size = 16)
+        #plt.xlabel("Contour Length (nm)")
+        #plt.ylabel("Density")
+        #plt.title("Cluster of %d curves at co = %g" % (self.get_cluster_size(), self.get_min_coincidence()))
+        plt.text(max_x/1.5, max_y/1.5, '%d curves' % self.get_cluster_size(), size = 12)
+        return plt.gcf()
 
 class SubCluster:
 
@@ -591,19 +595,20 @@ class SubCluster:
         for Lc_density in Lc_density_list:
             plt.plot(Lc_density[0] + initial_shifts[i] - av_shift, Lc_density[1], 'k-', alpha=alpha)
             i = i+1
-        
-        if average:
-            print "Code the average here."
+
         plt.xlim(0,max_x)
         
         max_y = plt.axis()[3]
-        plt.text(max_x/1.5, max_y/1.5, '$\Gamma\geq$ %.3f' % co, size = 16)
-
-        plt.xlabel("Contour Length (nm)")
-        plt.ylabel("Density")
-        plt.title("Subcluster %d (%d %s) of %d curves" % \
-            (self.get_cluster_node(subcluster).get_id(), self.get_cluster_node().get_id(), \
-                subcluster, self.get_cluster_size(subcluster)))
+        plt.yticks([])
+        plt.title("%s of %d curves ($\Gamma\geq$ %.3f)" % \
+             (subcluster, self.get_cluster_size(subcluster), co))
+        
+        #plt.text(max_x/1.5, max_y/1.5, '$\Gamma\geq$ %.3f' % co, size = 10, color='blue')
+        # plt.xlabel("Contour Length (nm)")
+        # plt.ylabel("Density")
+        # plt.title("Subcluster %d (%d %s) of %d curves" % \
+        #     (self.get_cluster_node(subcluster).get_id(), self.get_cluster_node().get_id(), \
+        #         subcluster, self.get_cluster_size(subcluster)))
         return plt.gcf()
 
     def plot_subcluster_noshift(self, subcluster, max_x = 150, alpha = 0.5):
@@ -622,13 +627,13 @@ class SubCluster:
                 subcluster, self.get_cluster_size(subcluster)))
         return plt.gcf()
 
-    def plot_both_subclusters(self, max_x = 150):
+    def plot_both_subclusters(self, max_x = 150, alpha=0.5):
         from matplotlib.pyplot import subplot, figsize
-        figsize(12,4)
+        #figsize(12,4)
         subplot(121)
-        self.plot_subcluster('left', max_x = max_x)
+        self.plot_subcluster('left', max_x = max_x, alpha=alpha, average=False)
         subplot(122)
-        self.plot_subcluster('right', max_x = max_x)
+        self.plot_subcluster('right', max_x = max_x, alpha=alpha, average=False)
 
 ''' 
 Extraneous functions not in any object.

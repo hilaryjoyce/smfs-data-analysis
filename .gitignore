@@ -1,8 +1,15 @@
 # this is a list of the files git will ignore
+*.png
+*.pdf
+run*
 *.pyc
 */.DS_Store
 .DS_Store
+
+
 smfs_data_analysis.sublime-project
 smfs_data_analysis.sublime-workspace
 reference_cluster_functions.py
 hierarchy_fork.py
+flat_sample_files.txt
+curved_sample_files.txt
