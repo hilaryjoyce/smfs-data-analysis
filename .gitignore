@@ -13,3 +13,6 @@ reference_cluster_functions.py
 hierarchy_fork.py
 flat_sample_files.txt
 curved_sample_files.txt
+
+run_ala_curved_co.py
+run_ala_flat_co.py
