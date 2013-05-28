@@ -17,6 +17,7 @@ class CoAnalysis(object):
         '''
 
     def __init__(self, parameter_folder, max_x, max_shift):
+        from glob import glob
         self.parameter_folder = parameter_folder
         self.max_shift = max_shift
         self.max_x = max_x
@@ -28,11 +29,13 @@ class CoAnalysis(object):
             shift_folder = "Coincidence_max%g/Shift_%d/" % (max_x, max_shift)
 
         self.shift_folder = shift_folder
+        density_folder = "Density_text_max%d/" % max_x
 
         # File names for associated parameters
         self.coincidence_file = "%s%scoincidence_report.txt" % (parameter_folder, shift_folder)
         self.tss_force_files = curve_files(parameter_folder, file_type = 'tss_force')
-        self.density_files = curve_files(parameter_folder, file_type = 'density')
+
+        self.density_files = glob("%s%s*.txt" % (parameter_folder, density_folder))
 
         # Load coincidence file
         curve1, curve2, co_array, shift_array = load_coincidence(self.coincidence_file)
@@ -366,6 +369,13 @@ class Cluster:
         coa = self.co_analysis
         flat_files = coa.list_tss_force_files()
         return [flat_files[i] for i in self.indexes]
+
+    def get_tss_force_arrays(self):
+        tss_force_files = self.list_tss_force_files()
+        tss_force_list = []
+        for file in tss_force_files:
+            tss_force_list.append(load2Col(file))
+        return tss_force_list
 
     def list_cluster_coincidences(self):
         coa = self.co_analysis
