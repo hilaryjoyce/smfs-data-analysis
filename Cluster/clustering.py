@@ -16,15 +16,16 @@ class CoAnalysis(object):
 
         '''
 
-    def __init__(self, parameter_folder, max_shift):
+    def __init__(self, parameter_folder, max_x, max_shift):
         self.parameter_folder = parameter_folder
         self.max_shift = max_shift
+        self.max_x = max_x
 
         # Find correct folder for coincidence data
         if max_shift == 'No':
-            shift_folder = "NoShift/"
+            shift_folder = "Coincidence_max%g/NoShift/" % max_x
         else:
-            shift_folder = "Shift_%d/" % max_shift
+            shift_folder = "Coincidence_max%g/Shift_%d/" % (max_x, max_shift)
 
         self.shift_folder = shift_folder
 
@@ -45,9 +46,10 @@ class CoAnalysis(object):
 
     def __str__(self):
         l1 = self.parameter_folder + '\n'
-        l2 = 'Hierarchical clustering at max_shift = %s\n' % str(self.max_shift)
-        l3 = 'Number of curves = %d\n' % len(self.list_curve_names())
-        return l1+l2+l3
+        l2 = self.shift_folder + '\n'
+        l3 = 'Hierarchical clustering at max_shift = %s\n' % str(self.max_shift)
+        l4 = 'Number of curves = %d\n' % len(self.list_curve_names())
+        return l1+l2+l3+l4
 
     def get_sample_size(self):
         '''Returns the number of initial data points.'''
@@ -122,7 +124,7 @@ class CoAnalysis(object):
 
         dendro = dendrogram(h_clustering, no_labels=True, 
             count_sort=True, orientation="left");
-        plt.title("Clustering Diagram for N = 3201", fontsize = 14)
+        plt.title("Clustering Diagram for N = %d" % self.get_sample_size(), fontsize = 14)
         plt.xlabel("Coincidence Metric ($\Gamma$)", fontsize = 14)
         plt.ylabel("Clusters", fontsize = 14)
         plt.xticks([1, 0.8, 0.6, 0.4, 0.2, 0], [0, 0.2, 0.4, 0.6, 0.8, 1])
@@ -420,13 +422,16 @@ class Cluster:
             plt.plot(Lc_density[0] + initial_shifts[i] - av_shift, Lc_density[1], 'k-', alpha=alpha)
             i = i+1
         plt.xlim(0,max_x)
-        plt.yticks([])
         max_y = plt.axis()[3]
+        plt.ylim(0,max_y)
+        plt.yticks([0, max_y/2, max_y])
         #plt.text(max_x/1.5, max_y/1.5, '$\Gamma\geq$ %.3f' % co, size = 16)
         #plt.xlabel("Contour Length (nm)")
         #plt.ylabel("Density")
         #plt.title("Cluster of %d curves at co = %g" % (self.get_cluster_size(), self.get_min_coincidence()))
         plt.text(max_x/1.5, max_y/1.5, '%d curves' % self.get_cluster_size(), size = 12)
+        plt.text(max_x/1.1, max_y/1.2, '%d' % self.cluster_number, size=12)        
+
         return plt.gcf()
 
 class SubCluster:
@@ -597,9 +602,8 @@ class SubCluster:
             i = i+1
 
         plt.xlim(0,max_x)
-        
         max_y = plt.axis()[3]
-        plt.yticks([])
+        plt.yticks([0, max_y/2, max_y])
         plt.title("%s of %d curves ($\Gamma\geq$ %.3f)" % \
              (subcluster, self.get_cluster_size(subcluster), co))
         
@@ -798,5 +802,18 @@ def get_cluster_node(root, left, right, curves):
             return get_cluster_node(root, right.left, right.right, curves)
         else:
             return "Error?"
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ''' --------------------- '''
