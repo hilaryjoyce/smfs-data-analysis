@@ -113,7 +113,8 @@ def saveCoincidence(folder, shift = 'No'):
     file = open(savefile, 'w')
     file.write("# Curve1\tCurve2\tGamma\tBest shift (nm)\n")
 
-    
+    i = 0
+    while i < len(co_matrix[0]):
         line = "%s\t%s\t%.3f\t%5.2f\n" % (co_matrix[0][i], co_matrix[1][i], co_matrix[2][i], co_matrix[3][i])
         file.write(line)
         i = i+1
@@ -289,9 +290,9 @@ def saveAllCoincidence(folder, max_x = 600, shift_list = [0, 5, 10, 15, 20, 30, 
     i = 0
 
     file = open("%sall_coincidence_report.txt" % folder, 'w')
-    header = "c1\tc2\t"
+    header = "#c1\tc2\t"
     for shift in shift_list:
-        header = header + "s%s\tG%s\t" % (str(shift), str(shift))
+        header = header + "G%s\ts%s\t" % (str(shift), str(shift))
     header = header + '\n'
     file.write(header)
     
@@ -317,7 +318,7 @@ def saveAllCoincidence(folder, max_x = 600, shift_list = [0, 5, 10, 15, 20, 30, 
             j = 0
             line = '%s\t%s\t' % (curveNum1, curveNum2) 
             while j < len(shift_list):
-                line = line + '%.3f\t%5.2f\t' % (x_max[j], Gamma[j])
+                line = line + '%.3f\t%5.2f\t' % (Gamma[j], x_max[j])
                 j = j+1
             line = line + '\n'
             file.write(line)
