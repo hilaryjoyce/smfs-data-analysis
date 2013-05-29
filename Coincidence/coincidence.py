@@ -113,9 +113,7 @@ def saveCoincidence(folder, shift = 'No'):
     file = open(savefile, 'w')
     file.write("# Curve1\tCurve2\tGamma\tBest shift (nm)\n")
 
-    i = 0
-    N = len(co_matrix[0])
-    while i < len(co_matrix[0]):
+    
         line = "%s\t%s\t%.3f\t%5.2f\n" % (co_matrix[0][i], co_matrix[1][i], co_matrix[2][i], co_matrix[3][i])
         file.write(line)
         i = i+1
@@ -267,7 +265,71 @@ def saveMultipleCoincidence(folder, max_x = 600, shift_list = [0, 5, 10, 15, 20,
         file.close()
         j = j+1
 
+''' 
+Function to save multiple coincidence values for different shifts in ONE file without
+completely swamping the memory.
+We'll work out how to get individual files out afterwards (readline/writeline to).
+We can also possible have MULTIPLE FILES open at once!
+'''
 
+def saveAllCoincidence(folder, max_x = 600, shift_list = [0, 5, 10, 15, 20, 30, 50, 100, 'No']):
+    '''
+    Calculates the maximum coincidence and associated shift for a list of maximum shifts
+    for an entire folder of curves (param_folder).
+    '''
+    from glob import glob
+    from time import clock
+    tstart = clock()
+    densityFiles = glob("%sDensity_text_max%g/*.txt" % (folder, max_x))
+
+    eps = 10**(-3)
+    N = len(densityFiles)
+    M = len(shift_list)
+    count = 0
+    i = 0
+
+    file = open("%sall_coincidence_report.txt" % folder, 'w')
+    header = "c1\tc2\t"
+    for shift in shift_list:
+        header = header + "s%s\tG%s\t" % (str(shift), str(shift))
+    header = header + '\n'
+    file.write(header)
+    
+    while (i < len(densityFiles)):
+        t1 = clock()
+        curve1 = densityFiles[i]
+        c1, d1 = load2Col(curve1)
+        curveNum1 = curveNumFinder(curve1)
+        k = i + 1
+        while (k < len(densityFiles)):
+            curve2 = densityFiles[k]
+            curveNum2 = curveNumFinder(curve2)
+            c2, d2 = load2Col(curve2)
+            if (max(d1) == 0 or max(d2) == 0):
+                u_max, x_max = [0]*M, [0]*M
+                if (max(d1) == 0 and max(d2) == 0):
+                    Gamma = [1.0]*M
+                else:
+                    Gamma = [0]*M
+            else:
+                for shift in shift_list:
+                    Gamma, u_max, x_max = multipleCoincidence(c1, d1, d2, shift_list)
+            j = 0
+            line = '%s\t%s\t' % (curveNum1, curveNum2) 
+            while j < len(shift_list):
+                line = line + '%.3f\t%5.2f\t' % (x_max[j], Gamma[j])
+                j = j+1
+            line = line + '\n'
+            file.write(line)
+            k = k+1
+        i += 1
+        t2 = clock()
+        print "Completed %d of %d in %g minutes." % (i, N, (t2-t1)/60.0)    
+    
+    file.close()
+    tfinish = clock()
+    
+    return 'Completed in %g hours' % ((tfinish-tstart)/3600)
 
 ''' 
 Separate functions 
