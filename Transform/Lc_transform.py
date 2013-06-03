@@ -14,11 +14,14 @@ def LcList(folder, p = 0.4, minTss = 5, minForce = 45):
     
     Lc_list = []
     curve_num_list = []
+    i = 0
     for file in tss_force_files:
         tss, force = load2Col(file)
         tss_lim, force_lim = limitTssForce(tss, force, minTss, minForce)
         Lc_list.append(calcLc(tss_lim, force_lim, p))
         curve_num_list.append(curveNumFinder(file))
+        #print i,
+        i = i+1
 
     return Lc_list, curve_num_list
 
@@ -29,7 +32,7 @@ def saveLcList(folder, p = 0.4, minTss = 5.0, minForce = 45.0):
     if not os.path.isdir("%sTransform_analysis/" % folder):
         os.mkdir("%sTransform_analysis/" % folder)
 
-    parameter_folder = "Parameters_p%g_minTss%d_minForce%d/" % (p, int(minTss), int(minForce))
+    parameter_folder = "Parameters_p%g_minTss%s_minForce%d/" % (p, str(minTss), int(minForce))
     if not os.path.isdir("%sTransform_analysis/%s" % (folder, parameter_folder)):
         os.mkdir("%sTransform_analysis/%s" % (folder, parameter_folder))
 
@@ -100,8 +103,13 @@ def limitTssForce(tss, force, minTss=5, minForce=45):
     tss_limit = tss[N-i]
     # LIMIT FORCE AND TSS TO VALID RANGE
 
-    force_short = force[(tss > minTss) & (tss < tss_limit)]
-    tss_short = tss[(tss>minTss) & (tss < tss_limit)]
+    if minTss == 'Var':
+        tss_short, force_short = remove_adhesion_peak(tss, force)
+        force_short = force_short[tss_short < tss_limit]
+        tss_short = tss_short[tss_short < tss_limit]
+    else:
+        force_short = force[(tss > minTss) & (tss < tss_limit)]
+        tss_short = tss[(tss>minTss) & (tss < tss_limit)]
     
     force_lim = force_short[(force_short > minForce) & (force_short < 500)]
     tss_lim = tss_short[(force_short > minForce) & (force_short < 500)]
@@ -150,3 +158,99 @@ def saveFile1(path, col1, col1_name):
         file.write(el)
         k=k+1
     file.close
+
+''' ======= Definitions for the variable adhesion peak recognition ======= '''
+
+def sort_by_tss(tss, force):
+    from numpy import asarray, argsort
+    tss = asarray(tss)
+    force = asarray(force)
+    args = argsort(tss)
+    f = force[args]
+    t = tss[args]
+    return t, f
+
+def maxes_array(tss, force):
+    from numpy import roll, asarray, transpose
+    t, f = sort_by_tss(tss, force)
+    # roll arrays
+    fp = roll(f, 50)
+    fn = roll(f, -50)
+    # find maximum array
+    mat = asarray([fp, f, fn])
+    tmat = transpose(mat)
+    maxes = [max(row) for row in tmat]
+    return maxes, t, f
+
+def original_maxes(tss, force):
+    from numpy import zeros
+    maxes, t, f = maxes_array(tss, force)
+    i = 0
+    max_orig = zeros(len(maxes))
+    while i < len(maxes):
+        if maxes[i] == f[i]:
+            max_orig[i] = 1
+        i = i+1
+    return max_orig, maxes, t, f
+
+def find_last_point(tss, force, d=0.1):
+    from numpy import std
+    max_orig, maxes, t, f = original_maxes(tss, force)
+    # Find last point of adhesion region:
+    i = 0
+    # skip first 0s
+    while i < len(max_orig):
+        if max_orig[i] == 1:
+            break
+        i = i+1
+    #print 'zeros', i
+    # make sure we're above the zero forces
+    while f[i] <= 0:
+        i = i+1
+        if i == len(f):
+            return t, f, 0
+    #print i
+    # skip the first crazy region (hopefully this doesn't bring us to the end...)
+    while std(f[10*i:10*(i+1)]) > 100:
+        i = i+1
+        if 10*(i+1) == len(f):
+            return t, f, 0
+    #print 'std', i
+    # find region with big tss jumps
+    while (i) < len(t):
+        if t[i+1]-t[i] > d:
+            i = i+1
+            break
+        i = i+1
+    #print 'tss jumps', i
+    # find first zeroed region after this
+    while any(max_orig[i:i+5] == 1):
+        i = i + 1
+    #print 'rezeroed', i
+    # find first increase in f again
+    while f[i+1]-f[i] < 0:
+        i = i + 1
+    i = i+1
+    while f[i+1]-f[i] < 0:
+        i = i +1
+    #print 'rise', i
+    return t, f, i
+    
+def remove_adhesion_peak(tss, force, d=0.1):
+    from numpy import copy
+    '''
+    Given a (zeroed) force and tss curve, and some delta tss = d,
+    Finds the initial adhesion peak region and removes it from the 
+    data.
+    '''
+    # create zeroed force array before last_point
+    t, f, i = find_last_point(tss, force, d)
+    f_new = copy(f[i:])
+    t_new = copy(t[i:])
+    return t_new, f_new
+
+
+
+
+
+
