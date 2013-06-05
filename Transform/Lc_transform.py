@@ -20,7 +20,6 @@ def LcList(folder, p = 0.4, minTss = 5, minForce = 45):
         tss_lim, force_lim = limitTssForce(tss, force, minTss, minForce)
         Lc_list.append(calcLc(tss_lim, force_lim, p))
         curve_num_list.append(curveNumFinder(file))
-        #print i,
         i = i+1
 
     return Lc_list, curve_num_list
