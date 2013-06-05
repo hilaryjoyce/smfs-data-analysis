@@ -441,7 +441,7 @@ class Cluster:
         #plt.ylabel("Density")
         #plt.title("Cluster of %d curves at co = %g" % (self.get_cluster_size(), self.get_min_coincidence()))
         plt.text(max_x/1.5, max_y/1.5, '%d curves' % self.get_cluster_size(), size = 14)
-        plt.text(max_x/1.1, max_y/1.2, '%d' % self.cluster_number, size=14)        
+        plt.text(max_x/1.2, max_y/1.2, '%d' % self.cluster_number, size=14)        
 
         return plt.gcf()
 
