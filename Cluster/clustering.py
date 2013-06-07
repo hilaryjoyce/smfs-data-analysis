@@ -445,6 +445,33 @@ class Cluster:
 
         return plt.gcf()
 
+    def plot_plain_cluster(self, alpha = 0.5, max_x = 150, max_y = 0):
+        import matplotlib.pyplot as plt
+        from numpy import average, arange
+        Lc_density_list = self.get_Lc_density_arrays()
+        initial_shifts = self.list_initial_shifts() # CHECK THIS
+        av_shift = average(initial_shifts) # CHECK THIS
+        co = self.get_min_coincidence()
+
+        i = 0
+        for Lc_density in Lc_density_list:
+            plt.plot(Lc_density[0] + initial_shifts[i] - av_shift, Lc_density[1], 'k-', alpha=alpha)
+            i = i+1
+        plt.xlim(0,max_x)
+        if max_y == 0:
+            max_y = plt.axis()[3]
+        plt.ylim(0,max_y)
+        plt.yticks([])
+        plt.xticks([])
+        #plt.text(max_x/1.5, max_y/1.5, '$\Gamma\geq$ %.3f' % co, size = 16)
+        #plt.xlabel("Contour Length (nm)")
+        #plt.ylabel("Density")
+        #plt.title("Cluster of %d curves at co = %g" % (self.get_cluster_size(), self.get_min_coincidence()))
+        #plt.text(max_x/1.5, max_y/1.5, '%d curves' % self.get_cluster_size(), size = 14)
+        #plt.text(max_x/1.2, max_y/1.2, '%d' % self.cluster_number, size=14)        
+
+        return plt.gcf()
+
 class SubCluster:
 
     def __init__(self, flat_cluster, cluster = None, curve_list = None):
