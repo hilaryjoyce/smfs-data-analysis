@@ -90,7 +90,7 @@ def CoincidenceList(folder, shift = 'No'):
 
 def saveCoincidence(folder, shift = 'No'):
     '''Tales a folder specifying the PARAMETERS (not Density_text) folder
-        and saves a coincidence_report.txt file in a shift folder.
+        and saves a coincidence_report.txt file in a shift folder.sub_tss = where(tss < location + d and tss > location - d)
         Currently this guy only does No shift ('valid' absCoincidence)
         or a full no-shift coincidence for any specified numeric shift.
     '''

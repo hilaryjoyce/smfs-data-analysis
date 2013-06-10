@@ -4,20 +4,7 @@ Used to transform tss_force data into smoothed or not smoothed curves
 by removing adhesion peaks.
 '''
 
-
-def loadTssForce(folder):
-    from glob import glob
-
-    tss_force_files = glob('%sTss_Force_text/*.txt' % folder)
-    
-    tss_list = []
-    force_list = []
-    for file in tss_force_files:
-        tss, force = load2Col(file)
-        tss_list.append(tss)
-        force_list.append(force)
-
-    return tss_list, force_list
+'''Functions to trim tss-force down to size'''
 
 def all_removeAdhesionPeak(folder):
     '''
@@ -51,7 +38,7 @@ def limitTssForce(tss, force):
         if (N-200-i) <= 0:
             i = 1
             break
-    
+
     tss_limit = tss[N-i]
     # LIMIT FORCE AND TSS TO VALID RANGE
 
@@ -78,28 +65,64 @@ def all_limitTssForce(folder):
 
     return lim_tss_list, lim_force_list
 
-def smoothForce(force, f = 10):
-    '''
-    Takes a single tss and force array pair and returns 
-    '''
-    from scipy.ndimage.filters import gaussian_filter1d
-    sm_force = gaussian_filter1d(force, f)
-    return sm_force
+'''Functions to create master set of force curves for comparison'''
 
-def all_smoothLimForce(folder, f = 10):
+def av_force(tss, force, location, d = 1.0):
+    from numpy import average, where, all
+    region = where(all(zip(tss < location+d, tss > location-d), axis=1))[0]
+    if len(region)>0:
+        return average(force[region])
+    else:
+        return 0
+
+def force_projection(tss, force, master_tss, d = 1.0):
+    from numpy import zeros
+
+    average_force = zeros(len(master_tss))
+    i = 0
+    while master_tss[i] < tss[0]:
+        i = i+1
+    while master_tss[i] < tss[-1]:
+        average_force[i] = av_force(tss, force, master_tss[i], d)
+        i = i+1
+    return average_force
+
+def all_projForce(folder, d = 1.0):
+    from numpy import ceil, arange
     lim_tss_list, lim_force_list = all_limitTssForce(folder)
-    smooth_force_list = []
-    for force in lim_force_list:
-        smooth_force_list.append(smoothForce(force, f=f))
-    return smooth_force_list
+    
+    # Find a good upper limit on tss for data set
+    max_tss = 0
+    for tss in lim_tss_list:
+        if max(tss) > max_tss:
+            max_tss = max(tss)
+    max_tss = ceil(max_tss/100.0)*100
+    
+    # Create a master tss array
+    master_tss = arange(0, max_tss, 0.1) # could be 0.5 instead, probably fine as is
+    master_tss_list = [master_tss]*len(lim_tss_list)
+    
+    # find the average force arrays
+    master_force_list = []
+    for [tss, force] in zip(lim_tss_list, lim_force_list):
+        master_force_list.append(force_projection(tss, force, master_tss, d))
+    return master_tss_list, master_force_list
 
-def all_smoothForce(folder, f = 10):
-    tss_list, force_list = all_removeAdhesionPeak(folder)
-    smooth_force_list = []
-    for force in force_list:
-        smooth_force_list.append(smoothForce(force, f=f))
-    return smooth_force_list
+''' Utility functions '''
 
+def curveNumFinder(fileName):
+    ''' Takes a filename and assuming {x}XXX.txt or LineXXXXPointXXXXformat, 
+        returns the curve number {x}XXX as a string or XXXX.XXXX as the
+        curve identifier.'''
+    import re
+    line_type = re.search('DNA', fileName)
+    if line_type:
+        curve =  re.findall('[0-9]{4}', fileName)
+        curveNum = "%s.%s" % (curve[0], curve[1])
+    else:
+        curve = re.search('[a-z]?[0-9]{3}(?=.txt)', fileName)
+        curveNum = curve.group(0)
+    return curveNum
 
 def load2Col(fileName, header=True, col1_num=True):
     from numpy import asarray
@@ -124,12 +147,26 @@ def load2Col(fileName, header=True, col1_num=True):
     B = asarray(B)
     return A, B
 
+def loadTssForce(folder):
+    from glob import glob
+
+    tss_force_files = glob('%sTss_Force_text/*.txt' % folder)
+    
+    tss_list = []
+    force_list = []
+    for file in tss_force_files:
+        tss, force = load2Col(file)
+        tss_list.append(tss)
+        force_list.append(force)
+
+    return tss_list, force_list
 
 def saveFile1(path, col1, col1_name):
     '''Saves a file with 1 column of data.'''
     file = open(path, 'w')
     file.write("%s\n" % col1_name)
     k  =0
+    
     while k<len(col1):
         el = '%g\n' % col1[k]
         file.write(el)
@@ -189,9 +226,9 @@ def find_last_point(tss, force, d=0.1):
     #print i
     # skip the first crazy region (hopefully this doesn't bring us to the end...)
     while std(f[10*i:10*(i+1)]) > 100:
-        i = i+1
-        if 10*(i+1) == len(f):
-            return t, f, 0
+            i = i+1
+            if 10*(i+1) == len(f):
+                return t, f, 0
     #print 'std', i
     # find region with big tss jumps
     while (i) < len(t):
@@ -225,6 +262,33 @@ def remove_adhesion_peak(tss, force, d=0.1):
     f_new = copy(f[i:])
     t_new = copy(t[i:])
     return t_new, f_new
+
+''' Gaussian smoothing - not using '''
+
+
+def smoothForce(force, f = 10):
+    '''
+    Takes a single tss and force array pair and returns 
+    a gaussian filtered curve of the same length.
+    '''
+    from scipy.ndimage.filters import gaussian_filter1d
+    sm_force = gaussian_filter1d(force, f)
+    return sm_force
+
+def all_smoothLimForce(folder, f = 10):
+    lim_tss_list, lim_force_list = all_limitTssForce(folder)
+    smooth_force_list = []
+    for force in lim_force_list:
+        smooth_force_list.append(smoothForce(force, f=f))
+    return smooth_force_list
+
+def all_smoothForce(folder, f = 10):
+    tss_list, force_list = all_removeAdhesionPeak(folder)
+    smooth_force_list = []
+    for force in force_list:
+        smooth_force_list.append(smoothForce(force, f=f))
+    return smooth_force_list
+
 
 # Redundant!
 # def sortTssForce(folder):
