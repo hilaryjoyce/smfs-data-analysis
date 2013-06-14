@@ -4,23 +4,60 @@ Used to transform tss_force data into smoothed or not smoothed curves
 by removing adhesion peaks.
 '''
 
-'''Functions to trim tss-force down to size'''
+def projForceList(folder, dz, pm, max_tss):
+    '''
+    Takes an experiment folder, loads all raw tss force curves,
+    then cuts off the tail and adhesion peak and calculates the 
+    projected average onto a master tss array.
+    '''
+    from glob import glob
+    from numpy import arange
 
-def all_removeAdhesionPeak(folder):
-    '''
-    Takes a folder and returns cut_tss_list and cut_force_list,
-    which contain tss and force arrays without adhesion peaks.
-    '''
-    tss_list, force_list = loadTssForce(folder)
-    cut_tss_list = []
-    cut_force_list = []
+    tss_force_files = glob('%sTss_Force_text/*.txt' % folder)
+
+    master_tss = arange(0, max_tss, dz)
+    force_list = []
+    curve_num_list = []
+    
+    for file in tss_force_files:
+        curve_num_list.append(curveNumFinder(file))
+        tss, force = load2Col(file)
+        lim_tss, lim_force = limitTssForce(tss, force)
+        force_list.append(force_projection(lim_tss, lim_force, master_tss, pm))
+
+    return force_list, curve_num_list
+
+def saveProjForceList(folder, dz = 0.5, pm = 0.5, max_tss = 400):
+    import os
+    from numpy import zeros, arange
+
+    if not os.path.isdir("%sTransform_analysis/" % folder):
+        os.mkdir("%sTransform_analysis/" % folder)
+
+    parameter_folder = "Parameters_dz%g_pm%g_max%d/" % (dz, pm, max_tss)
+    if not os.path.isdir("%sTransform_analysis/%s" % (folder, parameter_folder)):
+        os.mkdir("%sTransform_analysis/%s" % (folder, parameter_folder))
+
+    savefolder = "%sTransform_analysis/%s/Force_text/" % (folder, parameter_folder)
+    if not os.path.isdir(savefolder):
+        os.mkdir(savefolder)
+
+    force_list, curve_num_list = projForceList(folder, dz, pm, max_tss)
+    master_tss = arange(0, max_tss, dz)
     i = 0
-    while i < len(tss_list):
-        cut_tss, cut_force = remove_adhesion_peak(tss_list[i], force_list[i])
-        cut_tss_list.append(cut_tss)
-        cut_force_list.append(cut_force)
+    while i < len(force_list):
+        force = force_list[i]
+        if len(force) <= 10:
+            force = zeros(10)
+        curve = curve_num_list[i]
+        filename = "%sForce_list_%s.txt" %(savefolder, curve)
+        saveFile2(filename, master_tss, force, 'Tss (nm)', 'projForce (pN)')
         i = i+1
-    return cut_tss_list, cut_force_list
+
+    return "%sTransform_analysis/%s" % (folder, parameter_folder)
+
+
+'''Functions used overall'''
 
 def limitTssForce(tss, force):
     ''' 
@@ -48,34 +85,15 @@ def limitTssForce(tss, force):
 
     return tss_lim, force_lim
 
-def all_limitTssForce(folder):
-    '''
-    Gets all the tss and force arrays for a given experiment
-    and returns lists of the limited tss and force arrays (removing
-    adhesion peaks and baseline).
-    '''
-    tss_list, force_list = loadTssForce(folder)
-    lim_tss_list = []
-    lim_force_list = []
-    
-    for [tss, force] in zip(tss_list, force_list):
-        tss_lim, force_lim = limitTssForce(tss, force)
-        lim_tss_list.append(tss_lim)
-        lim_force_list.append(force_lim)
-
-    return lim_tss_list, lim_force_list
-
-'''Functions to create master set of force curves for comparison'''
-
-def av_force(tss, force, location, d = 1.0):
+def av_force(tss, force, location, pm):
     from numpy import average, where, all
-    region = where(all(zip(tss < location+d, tss > location-d), axis=1))[0]
+    region = where(all(zip(tss < location+pm, tss > location-pm), axis=1))[0]
     if len(region)>0:
         return average(force[region])
     else:
         return 0
 
-def force_projection(tss, force, master_tss, d = 1.0):
+def force_projection(tss, force, master_tss, pm):
     from numpy import zeros
 
     average_force = zeros(len(master_tss))
@@ -83,30 +101,10 @@ def force_projection(tss, force, master_tss, d = 1.0):
     while master_tss[i] < tss[0]:
         i = i+1
     while master_tss[i] < tss[-1]:
-        average_force[i] = av_force(tss, force, master_tss[i], d)
+        average_force[i] = av_force(tss, force, master_tss[i], [pm])
         i = i+1
     return average_force
 
-def all_projForce(folder, d = 1.0):
-    from numpy import ceil, arange
-    lim_tss_list, lim_force_list = all_limitTssForce(folder)
-    
-    # Find a good upper limit on tss for data set
-    max_tss = 0
-    for tss in lim_tss_list:
-        if max(tss) > max_tss:
-            max_tss = max(tss)
-    max_tss = ceil(max_tss/100.0)*100
-    
-    # Create a master tss array
-    master_tss = arange(0, max_tss, 0.1) # could be 0.5 instead, probably fine as is
-    master_tss_list = [master_tss]*len(lim_tss_list)
-    
-    # find the average force arrays
-    master_force_list = []
-    for [tss, force] in zip(lim_tss_list, lim_force_list):
-        master_force_list.append(force_projection(tss, force, master_tss, d))
-    return master_tss_list, master_force_list
 
 ''' Utility functions '''
 
@@ -147,6 +145,10 @@ def load2Col(fileName, header=True, col1_num=True):
     B = asarray(B)
     return A, B
 
+'''------Separate all functions-----'''
+'''Not currently in use'''
+
+
 def loadTssForce(folder):
     from glob import glob
 
@@ -161,6 +163,56 @@ def loadTssForce(folder):
 
     return tss_list, force_list
 
+def all_removeAdhesionPeak(tss_list, force_list):
+    '''
+    Takes a folder and returns cut_tss_list and cut_force_list,
+    which contain tss and force arrays without adhesion peaks.
+    '''
+    cut_tss_list = []
+    cut_force_list = []
+    i = 0
+    while i < len(tss_list):
+        cut_tss, cut_force = remove_adhesion_peak(tss_list[i], force_list[i])
+        cut_tss_list.append(cut_tss)
+        cut_force_list.append(cut_force)
+        i = i+1
+    return cut_tss_list, cut_force_list
+
+def all_limitTssForce(tss_list, force_list):
+    '''
+    Gets all the tss and force arrays for a given experiment
+    and returns lists of the limited tss and force arrays (removing
+    adhesion peaks and baseline).
+    '''
+    lim_tss_list = []
+    lim_force_list = []
+    
+    for [tss, force] in zip(tss_list, force_list):
+        tss_lim, force_lim = limitTssForce(tss, force)
+        lim_tss_list.append(tss_lim)
+        lim_force_list.append(force_lim)
+
+    return lim_tss_list, lim_force_list
+
+def all_projForce(lim_tss_list, lim_force_list, dz = 0.5, pm = 0.5):
+    from numpy import ceil, arange
+    
+    # Find a good upper limit on tss for data set
+    max_tss = 0
+    for tss in lim_tss_list:
+        if max(tss) > max_tss:
+            max_tss = max(tss)
+    max_tss = ceil(max_tss/100.0)*100
+    
+    # Create a master tss array
+    master_tss = arange(0, max_tss, dz)
+    
+    # find the average force arrays
+    master_force_list = []
+    for [tss, force] in zip(lim_tss_list, lim_force_list):
+        master_force_list.append(force_projection(tss, force, master_tss, pm))
+    return master_force_list
+
 def saveFile1(path, col1, col1_name):
     '''Saves a file with 1 column of data.'''
     file = open(path, 'w')
@@ -169,6 +221,17 @@ def saveFile1(path, col1, col1_name):
     
     while k<len(col1):
         el = '%g\n' % col1[k]
+        file.write(el)
+        k=k+1
+    file.close
+
+def saveFile2(path, col1, col2, col1_name, col2_name):
+    '''Saves a file with 2 columns of data.'''
+    file = open(path, 'w')
+    file.write("%s\t%s\n" % (col1_name, col2_name))
+    k=0
+    while k<len(col1):
+        el = '%3g\t%3g\n' % (col1[k], col2[k])
         file.write(el)
         k=k+1
     file.close

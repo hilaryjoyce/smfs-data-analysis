@@ -40,36 +40,40 @@ def absCoincidence(lc, d1, d2, shift='No'):
         s = sqrt(dot_d1/dot_d2)
     else:
         s = sqrt(dot_d2/dot_d1)
-    
+
     Gamma = max_conv / sqrt(dot_d1 * dot_d2) * s
 
     return round(Gamma,5), max_id, round(max_lc, int(-1*log10(dx)+2))
 
 
-def CoincidenceList(folder, shift = 'No'):
+def CoincidenceList(folder, shift = 'No', type = 'density'):
     '''
     Calculates a list of the maximum coincidence and corresponding shift 
     for ONE particular shift.
+    Folder is the parameter folder starting from "../Data/".
+    Type is 'density' or 'force'. 
     '''
     from glob import glob
-    densityFiles = glob("%sDensity_text/*.txt" % folder)
-    
-    eps = 10**(-3) # fixinig this since I haven't changed it in so long I forget what it means...
+    if type == 'density':
+        files = glob("%sDensity_text/*.txt" % folder)
+    else:
+        files = glob("%sForce_text/*.txt" % folder)
+    eps = 10**(-3) # fixing this since I haven't changed it in so long I forget what it means...
 
-    N = len(densityFiles)
+    N = len(files)
     count = 0
     i = 0
     curve1_list = []
     curve2_list = []
     gamma_list = []
     x_max_list = []
-    while (i < len(densityFiles)):
-        curve1 = densityFiles[i]
+    while (i < len(files)):
+        curve1 = files[i]
         c1, d1 = load2Col(curve1)
         curveNum1 = curveNumFinder(curve1)
         k = i + 1
-        while (k < len(densityFiles)):
-            curve2 = densityFiles[k]
+        while (k < len(files)):
+            curve2 = files[k]
             curveNum2 = curveNumFinder(curve2)
             c2, d2 = load2Col(curve2)
             if (max(d1) == 0 or max(d2) == 0):
@@ -88,7 +92,7 @@ def CoincidenceList(folder, shift = 'No'):
 
     return [curve1_list, curve2_list, gamma_list, x_max_list]
 
-def saveCoincidence(folder, shift = 'No'):
+def saveCoincidence(folder, shift = 'No', type='density'):
     '''Tales a folder specifying the PARAMETERS (not Density_text) folder
         and saves a coincidence_report.txt file in a shift folder.sub_tss = where(tss < location + d and tss > location - d)
         Currently this guy only does No shift ('valid' absCoincidence)
@@ -108,7 +112,7 @@ def saveCoincidence(folder, shift = 'No'):
     print folder+savefolder
 
     savefile = "%s%scoincidence_report.txt" % (folder, savefolder)    
-    co_matrix = CoincidenceList(folder, shift)
+    co_matrix = CoincidenceList(folder, shift, type=type)
 
     file = open(savefile, 'w')
     file.write("# Curve1\tCurve2\tGamma\tBest shift (nm)\n")
@@ -169,17 +173,19 @@ def multipleCoincidence(lc, d1, d2, shift_list):
 
     return Gamma_list, x_list, u_list
 
-def MultipleCoincidenceList(folder, max_x = 600, shift_list = [0, 5, 10, 15, 20, 30, 50, 100, 'No']):
+def MultipleCoincidenceList(folder, type='density', max_x = 600, shift_list = [0, 5, 10, 15, 20, 30, 50, 100, 'No']):
     '''
     Calculates the maximum coincidence and associated shift for a list of maximum shifts
     for an entire folder of curves (param_folder).
     '''
     from glob import glob
     from time import clock
-    densityFiles = glob("%sDensity_text_max%g/*.txt" % (folder, max_x))
-
+    if type == 'density':
+        files = glob("%sDensity_text_max%g/*.txt" % (folder, max_x))
+    else:
+        files = glob("%sForce_text/*.txt" % folder)
     eps = 10**(-3)
-    N = len(densityFiles)
+    N = len(files)
     M = len(shift_list)
     count = 0
     i = 0
@@ -191,14 +197,14 @@ def MultipleCoincidenceList(folder, max_x = 600, shift_list = [0, 5, 10, 15, 20,
     file = open("%sco_run_report.txt" % folder, 'w')
     file.write("First curves completed out of %d:\n" % N)
 
-    while (i < len(densityFiles)):
+    while (i < len(files)):
         t1 = clock()
-        curve1 = densityFiles[i]
+        curve1 = files[i]
         c1, d1 = load2Col(curve1)
         curveNum1 = curveNumFinder(curve1)
         k = i + 1
-        while (k < len(densityFiles)):
-            curve2 = densityFiles[k]
+        while (k < len(files)):
+            curve2 = files[k]
             curveNum2 = curveNumFinder(curve2)
             c2, d2 = load2Col(curve2)
             if (max(d1) == 0 or max(d2) == 0):
@@ -227,31 +233,36 @@ def MultipleCoincidenceList(folder, max_x = 600, shift_list = [0, 5, 10, 15, 20,
 
     return [curve1_list, curve2_list, gamma_list, x_max_list]
 
-def saveMultipleCoincidence(folder, max_x = 600, shift_list = [0, 5, 10, 15, 20, 30, 50, 100, 'No']):
+def saveMultipleCoincidence(folder, type = 'density', max_x = 600, shift_list = [0, 5, 10, 15, 20, 30, 50, 100, 'No']):
     '''Tales a folder specifying the PARAMETERS (not Density_text) folder
         and saves a coincidence_report.txt file in a shift folder.
     '''
     import os
     import sys
 
-    co_matrix = MultipleCoincidenceList(folder, max_x, shift_list)
+    co_matrix = MultipleCoincidenceList(folder, type, max_x, shift_list)
 
-    if not os.path.isdir("%sCoincidence_max%g/" %(folder, max_x)):
-        os.mkdir("%sCoincidence_max%g/" %(folder, max_x))
+    if type == 'density':
+        co_folder = "%sCoincidence_max%g/" % (folder, max_x)
+    else:
+        co_folder = "%sCoincidence/" % folder
+
+    if not os.path.isdir(co_folder):
+        os.mkdir(co_folder)
 
     j = 0
     for shift in shift_list:
         if shift == 'No':
-            savefolder = "Coincidence_max%g/NoShift/" % max_x
+            savefolder = "%sNoShift/" % co_folder
         else:
-            savefolder = "Coincidence_max%g/Shift_%d/" % (max_x, int(shift))
+            savefolder = "%sShift_%d/" % (co_folder, int(shift))
 
-        if not os.path.isdir(folder+savefolder):
-            os.mkdir(folder+savefolder)
+        if not os.path.isdir(savefolder):
+            os.mkdir(savefolder)
 
-        print folder+savefolder
+        print savefolder
 
-        savefile = "%s%scoincidence_report.txt" % (folder, savefolder)    
+        savefile = "%scoincidence_report.txt" % savefolder
 
         file = open(savefile, 'w')
         file.write("# c1\tc2\tGamma\tBest shift (nm)\n")
@@ -273,7 +284,7 @@ We'll work out how to get individual files out afterwards (readline/writeline to
 We can also possible have MULTIPLE FILES open at once!
 '''
 
-def saveAllCoincidence(folder, max_x = 600, shift_list = [0, 5, 10, 15, 20, 30, 50, 100, 'No']):
+def saveAllCoincidence(folder, type='density', max_x = 600, shift_list = [0, 5, 10, 15, 20, 30, 50, 100, 'No']):
     '''
     Calculates the maximum coincidence and associated shift for a list of maximum shifts
     for an entire folder of curves (param_folder).
@@ -282,15 +293,21 @@ def saveAllCoincidence(folder, max_x = 600, shift_list = [0, 5, 10, 15, 20, 30, 
     from time import clock
     import os
     tstart = clock()
-    densityFiles = glob("%sDensity_text_max%g/*.txt" % (folder, max_x))
+    if type == 'density':
+        files = glob("%sDensity_text_max%g/*.txt" % (folder, max_x))
+    else:
+        files = glob("%sForce_text/*.txt" % folder)
 
     eps = 10**(-3)
-    N = len(densityFiles)
+    N = len(files)
     M = len(shift_list)
     count = 0
     i = 0
     
-    co_folder = "%sCoincidence_max%g/" % (folder, max_x)
+    if type == 'density':
+        co_folder = "%sCoincidence_max%g/" %(folder, max_x)
+    else:
+        co_folder = "%sCoincidence/"
     if not os.path.isdir(co_folder):
         os.mkdir(co_folder)
 
@@ -301,14 +318,14 @@ def saveAllCoincidence(folder, max_x = 600, shift_list = [0, 5, 10, 15, 20, 30, 
     header = header + '\n'
     file.write(header)
     
-    while (i < len(densityFiles)):
+    while (i < len(files)):
         t1 = clock()
-        curve1 = densityFiles[i]
+        curve1 = files[i]
         c1, d1 = load2Col(curve1)
         curveNum1 = curveNumFinder(curve1)
         k = i + 1
-        while (k < len(densityFiles)):
-            curve2 = densityFiles[k]
+        while (k < len(files)):
+            curve2 = files[k]
             curveNum2 = curveNumFinder(curve2)
             c2, d2 = load2Col(curve2)
             if (max(d1) == 0 or max(d2) == 0):
