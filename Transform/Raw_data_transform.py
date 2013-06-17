@@ -23,7 +23,9 @@ def projForceList(folder, dz, pm, max_tss):
         curve_num_list.append(curveNumFinder(file))
         tss, force = load2Col(file)
         lim_tss, lim_force = limitTssForce(tss, force)
-        force_list.append(force_projection(lim_tss, lim_force, master_tss, pm))
+        force_proj = force_projection(lim_tss, lim_force, master_tss, pm)
+        pos_force_proj = [max(0, x) for x in force_proj]
+        force_list.append(pos_force_proj)
 
     return force_list, curve_num_list
 
