@@ -307,10 +307,11 @@ def saveAllCoincidence(folder, type='density', max_x = 600, shift_list = [0, 5, 
     if type == 'density':
         co_folder = "%sCoincidence_max%g/" %(folder, max_x)
     else:
-        co_folder = "%sCoincidence/"
+        co_folder = "%sCoincidence/" % folder
     if not os.path.isdir(co_folder):
         os.mkdir(co_folder)
 
+    print co_folder
     file = open("%sall_coincidence_report.txt" % co_folder, 'w')
     header = "#c1\tc2\t"
     for shift in shift_list:

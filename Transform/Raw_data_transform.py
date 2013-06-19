@@ -18,7 +18,10 @@ def projForceList(folder, dz, pm, max_tss):
     master_tss = arange(0, max_tss, dz)
     force_list = []
     curve_num_list = []
-    
+
+    i = 0
+    print "N = %d" % len(tss_force_files)
+
     for file in tss_force_files:
         curve_num_list.append(curveNumFinder(file))
         tss, force = load2Col(file)
@@ -26,6 +29,8 @@ def projForceList(folder, dz, pm, max_tss):
         force_proj = force_projection(lim_tss, lim_force, master_tss, pm)
         pos_force_proj = [max(0, x) for x in force_proj]
         force_list.append(pos_force_proj)
+        print i, 
+        i = i+1
 
     return force_list, curve_num_list
 
@@ -71,7 +76,7 @@ def limitTssForce(tss, force):
     N = len(tss)
     sd=0
     i=1
-    while sd < 25:
+    while sd < 30:
         sd = std(force[(N-200-i):(N-i)])
         i=i+20
         if (N-200-i) <= 0:
@@ -97,14 +102,15 @@ def av_force(tss, force, location, pm):
 
 def force_projection(tss, force, master_tss, pm):
     from numpy import zeros
-
-    average_force = zeros(len(master_tss))
+    N = len(master_tss)
+    average_force = zeros(N)
     i = 0
-    while master_tss[i] < tss[0]:
-        i = i+1
-    while master_tss[i] < tss[-1]:
-        average_force[i] = av_force(tss, force, master_tss[i], [pm])
-        i = i+1
+    if len(tss) > 0:
+        while i < N and master_tss[i] < tss[0]:
+            i = i+1
+        while (i < N) and (master_tss[i] < tss[-1]):
+            average_force[i] = av_force(tss, force, master_tss[i], [pm])
+            i = i+1
     return average_force
 
 

@@ -4,7 +4,7 @@ Takes an all_coincidence_report.txt IN a Coincidence_max_x folder already
 and returns a folder + coincidence report for each shift.
 '''
 
-def split_all_coincidence(param_folder, max_x):
+def split_all_coincidence(param_folder, type='density', max_x=300):
     '''
     Takes an all_coincidence_report.txt IN a Coincidence_max_x folder already
     and returns a folder + coincidence report for each shift.
@@ -13,7 +13,10 @@ def split_all_coincidence(param_folder, max_x):
     from glob import glob
     import os 
     
-    co_folder = '%sCoincidence_max%d/' % (param_folder, max_x)
+    if type == 'density':
+        co_folder = '%sCoincidence_max%d/' % (param_folder, max_x)
+    else:
+        co_folder = '%sCoincidence/' % param_folder
     co_file = glob('%sall*.txt' % co_folder)[0]
 
     file = open(co_file, 'r')
@@ -67,14 +70,14 @@ def split_all_coincidence(param_folder, max_x):
 
     i = 0
     for data in shift_data:
-    with open('%scoincidence_report.txt' % shift_folders[i], 'w') as file:
-        file.write("# c1\tc2\tGamma\tBest shift (nm)\n")
-        k = 0
-        while k < len(data[0]):
-            line = '%s\t%s\t%.3f\t%5.2f\n' % (curve1_list[k], curve2_list[k], data[0][k], data[1][k])
-            file.write(line)
-            k = k+1
-    i = i+1
+        with open('%scoincidence_report.txt' % shift_folders[i], 'w') as file:
+            file.write("# c1\tc2\tGamma\tBest shift (nm)\n")
+            k = 0
+            while k < len(data[0]):
+                line = '%s\t%s\t%.3f\t%5.2f\n' % (curve1_list[k], curve2_list[k], data[0][k], data[1][k])
+                file.write(line)
+                k = k+1
+        i = i+1
 
     return None
 

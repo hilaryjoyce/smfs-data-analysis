@@ -23,12 +23,8 @@ class CoAnalysis(object):
         self.max_x = max_x
         self.type = type
 
-        if type == 'density':
-            co_folder = '%sCoincidence_max%d/' % (parameter_folder, max_x)
-            density_folder = "Density_text_max%d/" % max_x
-        else:
-            co_folder = '%sCoincidence/' % parameter_folder
-            density_folder = "Force_text/"
+        co_folder = '%sCoincidence/' % parameter_folder
+        force_folder = "Force_text/"
 
         # Find correct folder for coincidence data
         if max_shift == 'No':
@@ -37,13 +33,12 @@ class CoAnalysis(object):
             shift_folder = "%sShift_%d/" % (co_folder, max_shift)
 
         self.shift_folder = shift_folder
-        
 
         # File names for associated parameters
         self.coincidence_file = "%scoincidence_report.txt" % shift_folder
         self.tss_force_files = curve_files(parameter_folder, file_type = 'tss_force')
 
-        self.density_files = glob("%s%s*.txt" % (parameter_folder, density_folder))
+        self.force_files = glob("%s%s*.txt" % (parameter_folder, force_folder))
 
         # Load coincidence file
         curve1, curve2, co_array, shift_array = load_coincidence(self.coincidence_file)
@@ -92,7 +87,7 @@ class CoAnalysis(object):
 
     def list_density_files(self):
         '''Returns a list of all the density files.'''
-        return self.density_files
+        return self.force_files
 
     def list_tss_force_files(self):
         '''Returns a list of all the tss_force files.'''
@@ -476,7 +471,6 @@ class Cluster:
         #plt.ylabel("Density")
         #plt.title("Cluster of %d curves at co = %g" % (self.get_cluster_size(), self.get_min_coincidence()))
         plt.text(max_x/1.5, max_y/1.5, 'N = %d' % self.get_cluster_size(), size = 12)
-        plt.text(max_x/1.2, max_y/1.2, '%d' % self.cluster_number, size=12)        
 
         return plt.gcf()
 
@@ -670,8 +664,8 @@ class SubCluster:
             plt.plot(Lc_density[0], Lc_density[1], 'k-', alpha=alpha)
             i = i+1
         plt.xlim(0,max_x)
-        plt.xlabel("Contour Length (nm)")
-        plt.ylabel("Density")
+        plt.xlabel("Separation (nm)")
+        plt.ylabel("Force (pN)")
         plt.title("Subcluster %d (%d %s) of %d curves" % \
             (self.get_cluster_node(subcluster).get_id(), self.get_cluster_node().get_id(), \
                 subcluster, self.get_cluster_size(subcluster)))
@@ -849,11 +843,113 @@ def get_cluster_node(root, left, right, curves):
         else:
             return "Error?"
 
+'''VISUALIZING'''
 
+def plot_tf_subplots(sub_list, coa, max_x=100, max_y=300):
+    from numpy import ceil
+    import matplotlib.pyplot as plt
+    data_list = cluster_tf_list(sub_list, coa)
+    cols = 4
+    rows = ceil(len(data_list)/4.0)
+    height = rows * 2.2
+    width = cols * 3
+    i = 1
+    plt.figsize(width, height)
+    while i <= len(data_list):
+        data = data_list[i-1];
+        plt.subplot(rows, cols, i);
+        plt.plot(data[0], data[1]);
+        plt.xlim(0, max_x);
+        plt.ylim(-200,max_y)
+        plt.text(max_x/1.2, max_y/1.2, '%d' % i)
+        i = i+1;
+    plt.tight_layout(pad=2);
+    plt.subplots_adjust(top=0.96);
+    return plt.gcf();
 
+def plot_avforce_subplots(data_list, coa, max_x=100, max_y=0.2):
+    from numpy import ceil
+    import matplotlib.pyplot as plt
+    data_list = cluster_lcd_list(data_list, coa)
+    cols = 4
+    rows = ceil(len(data_list)/4.0)
+    height = rows * 2.2
+    width = cols * 3
+    i = 1
+    plt.figsize(width, height)
+    while i <= len(data_list):
+        data = data_list[i-1];
+        plt.subplot(rows, cols, i);
+        plt.plot(data[0], data[1]);
+        plt.xlim(0, max_x);
+        plt.ylim(0, max_y);
+        plt.text(max_x/1.2, max_y/1.2, '%d' % i)
+        i = i+1;
+    plt.tight_layout(pad=2);
+    plt.subplots_adjust(top=0.96);
+    return plt.gcf();
 
+def plot_av_tf_subplots(sub_list, coa, max_x, lcd_y=0.15, tf_y = 300):
+    from numpy import ceil
+    import matplotlib.pyplot as plt
+    cpool = ["#1F78B4", "#E31A1C"]
+    lcd_list = cluster_lcd_list(sub_list, coa)
+    tf_list = cluster_tf_list(sub_list, coa)
+    cols = 3
+    rows = ceil(len(lcd_list)/3.0)
+    height = rows * 2.2
+    width = cols * 4
+    i = 1
+    plt.figsize(width, height)
+    while i <= len(lcd_list):
+        lcd = lcd_list[i-1];
+        tf = tf_list[i-1];
+        ax = plt.subplot(rows, cols, i);
+        plt.ylim(-100, lcd_y);
+        plt.xlim(0, max_x)
+        plt.text(max_x/1.2, lcd_y/1.2, '%d' % i)
+        plt.plot(tf[0], tf[1], color=cpool[0], alpha=0.6)
+        plt.plot(lcd[0], lcd[1], color=cpool[1], lw=1);
+        i = i+1;
+    plt.tight_layout(pad=2);
 
+def cluster_tf_list(curve_list, coa):
+    tf_files = [coa.tss_force_files[x] for x in curve_list]
+    tf_list = []
+    for file in tf_files:
+        tf_list.append(load2Col(file))
+    return tf_list
 
+def cluster_lcd_list(curve_list, coa):
+    coa_files = coa.list_density_files()
+    lcd_files = [coa_files[x] for x in curve_list]
+    lcd_list = []
+    for file in lcd_files:
+        lcd_list.append(load2Col(file))
+    return lcd_list
+
+def load2Col(fileName, header=True, col1_num=True):
+    from numpy import asarray
+    ''' Takes a file with two columns and return each as an array. '''
+    A = []
+    B = []
+    file = open(fileName, 'r')
+    if header:
+        file.readline()
+    i =0
+    if col1_num:
+        for line in file:
+            A.append(float(line.split()[0]))
+            B.append(float(line.split()[1]))
+        file.close
+    else:
+        for line in file:
+            A.append(line.split()[0])
+            B.append(float(line.split()[1]))
+        file.close
+    A = asarray(A)
+    B = asarray(B)
+    return A, B
 
 
 
