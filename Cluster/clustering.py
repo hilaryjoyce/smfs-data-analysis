@@ -411,13 +411,45 @@ class Cluster:
             i = i+1
         return shift
 
+    def list_smallest_shifts(self):
+        '''
+        Finds the curve to which we should align all the
+        other curves (because it is in the centre) and provides
+        a list of shifts to apply to the other curves relative to
+        that curve. These shifts are also AVERAGED.
+        '''
+        from numpy import arange
+        shifts = self.list_cluster_shifts()
+        matrix = [[0,0,0,0,0] for i in arange(0, 25, 5)]
+        i = 0
+        k = 0
+        while i < 5:
+            j = 0
+            while j < 5:
+                if i == k:
+                    matrix[i][j] = 0
+                if i < j:
+                    matrix[j][i] = shifts[k]*-1
+                    matrix[i][j] = shifts[k]
+                    k = k+1
+                j = j+1
+            i = i+1
+        shift_sums = []
+        for row in matrix:
+            shift_sums.append(sum([abs(x) for x in row]))
+
+        min_shifts = min(shift_sums)
+        min_index = shift_sums.index(min_shifts)
+        smallest_shifts = matrix[min_index]
+        av_shift = sum(smallest_shifts)/self.get_cluster_size()
+        smallest_shifts = [x-av_shift for x in smallest_shifts]
+        return smallest_shifts
 
     def list_initial_shifts(self):
         shift_list = self.list_cluster_shifts()
         initial_shifts = [0] + shift_list[0:self.get_cluster_size()-1]
         return initial_shifts
-t_list[0:self.get_cluster_size()-1]
-        return initial_shifts
+
 
     def get_Lc_density_arrays(self):
         density_files = self.list_density_files()
