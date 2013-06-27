@@ -37,11 +37,11 @@ def absCoincidence(lc, d1, d2, shift='No'):
     dot_d2 = dot(d2, d2)
 
     if (dot_d1 <= dot_d2):
-        s = sqrt(dot_d1/dot_d2)
+        s = 1/dot_d2
     else:
-        s = sqrt(dot_d2/dot_d1)
+        s = 1/dot_d1
 
-    Gamma = max_conv / sqrt(dot_d1 * dot_d2) * s
+    Gamma = max_conv * s
 
     return round(Gamma,5), max_id, round(max_lc, int(-1*log10(dx)+2))
 
@@ -180,10 +180,12 @@ def MultipleCoincidenceList(folder, type='density', max_x = 600, shift_list = [0
     '''
     from glob import glob
     from time import clock
+    from sys import exit
     if type == 'density':
         files = glob("%sDensity_text_max%g/*.txt" % (folder, max_x))
     else:
-        files = glob("%sForce_text/*.txt" % folder)
+        files = glob("%sForce_text/F*.txt" % folder)
+        print files
     eps = 10**(-3)
     N = len(files)
     M = len(shift_list)

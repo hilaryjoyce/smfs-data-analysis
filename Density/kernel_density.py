@@ -16,7 +16,6 @@ def saveKDE(parameter_folder, covfac = 8, delta = 0.25, min_x = 0, max_x = 600):
        New density folder assumes list folder begins with List_'''
     import os
     density_folder = "%sDensity_text_max%g/" % (parameter_folder, max_x)
-    print density_folder
     if not os.path.isdir(density_folder):
         os.mkdir(density_folder)
 
@@ -29,6 +28,7 @@ def saveKDE(parameter_folder, covfac = 8, delta = 0.25, min_x = 0, max_x = 600):
         filename = "%sDensity_%s.txt" %(density_folder, curve)
         saveFile2(filename, xs, density_xs, 'Value', 'KDE')
         i = i+1
+    return density_folder
 
 def kernelDensity(List, covfac=8, delta=0.25, min_x = 0, max_x = 600):
     ''' Calculates the kernel density, returns xs and density_xs
@@ -45,7 +45,8 @@ def kernelDensity(List, covfac=8, delta=0.25, min_x = 0, max_x = 600):
         else: 
             density.covariance_factor = lambda : covfac/max(List)
         density._compute_covariance()
-        density_xs = asarray([round(x,10) for x in density(xs)])
+        density_xs = density(xs)
+        #density_xs = asarray([round(x,10) for x in density(xs)])
     return [xs, density_xs]
 
 def densityList(folder, covfac = 8, delta = 0.25, min_x = 0, max_x = 600):

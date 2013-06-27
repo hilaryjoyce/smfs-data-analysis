@@ -121,7 +121,7 @@ class CoAnalysis(object):
         Z = linkage(1-self.co_array, method='complete')
         return Z
 
-    def plot_dendrogram(self):
+    def plot_dendrogram(self, nolabels=True):
         '''
         Plots the dendragram visualization of Z and returns
         the dendrogram object 'dendro'.
@@ -133,9 +133,9 @@ class CoAnalysis(object):
         set_link_color_palette(cpool)
         h_clustering = self.Z
 
-        dendro = dendrogram(h_clustering, no_labels=True, 
+        dendro = dendrogram(h_clustering, no_labels=nolabels, 
             count_sort=True, orientation="left");
-        plt.title("Clustering Diagram for N = %d" % self.get_sample_size(), fontsize = 14)
+        #plt.title("Clustering Diagram for N = %d" % self.get_sample_size(), fontsize = 14)
         plt.xlabel("Coincidence Metric ($\Gamma$)", fontsize = 14)
         plt.ylabel("Clusters", fontsize = 14)
         plt.xticks([1, 0.8, 0.6, 0.4, 0.2, 0], [0, 0.2, 0.4, 0.6, 0.8, 1])
@@ -411,9 +411,12 @@ class Cluster:
             i = i+1
         return shift
 
+
     def list_initial_shifts(self):
         shift_list = self.list_cluster_shifts()
         initial_shifts = [0] + shift_list[0:self.get_cluster_size()-1]
+        return initial_shifts
+t_list[0:self.get_cluster_size()-1]
         return initial_shifts
 
     def get_Lc_density_arrays(self):
