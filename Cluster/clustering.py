@@ -202,7 +202,7 @@ class FlatClusters:
         return l1+l2+l3
     
 
-    def get_flat_ids(self):
+    def get_curve_hier_ids(self):
         '''
         Returns a flattened cluster list T where each entry 
         corresponds to the initial curve index (in the CoAnalysis clustering
@@ -228,6 +228,19 @@ class FlatClusters:
             i = i+1
         return list(T_ids)
 
+    def list_hier_ids(self):
+        '''
+        Returns a list that matches list_cluster_ids but
+        provides the original cluster ID from the hierarchical 
+        clustering for each flattened cluster.
+        '''
+        M = self.number
+        curve_hier_ids = self.get_curve_hier_ids()
+        curve_flat_ids = self.list_flat_cluster()
+        cluster_hier_ids = [0]*M
+        for (x, i) in zip(curve_hier_ids, curve_flat_ids):
+            cluster_hier_ids[i-1] = x
+        return cluster_hier_ids
 
     def get_co_analysis(self):
         ''' 
@@ -345,7 +358,7 @@ class Cluster:
         self.flat = flat_cluster
         self.co_analysis = flat_cluster.get_co_analysis()
         self.indexes = flat_cluster.curves_by_cluster()[cluster_number-1]
-
+        self.hier_id = flat_cluster.list_hier_ids()[cluster_number-1]
         self.min_coincidence = flat_cluster.get_min_coincidence()
 
     def __str__(self):
@@ -375,6 +388,20 @@ class Cluster:
         Returns the minimum coincidence of the curves in this cluster.
         '''
         return self.min_coincidence
+
+    def get_real_coincidence(self):
+        '''
+        Returns the actual minimum coincidence
+        for this cluster of curves, not for the flat cluster object.
+        '''
+        hier_id = self.hier_id
+        coa = self.flat.co_analysis
+        Z = coa.Z
+        N = coa.get_sample_size()
+        if hier_id < N:
+            return 1
+        else:
+            return 1-Z[hier_id - N][2]
 
     def get_cluster_size(self):
         '''
@@ -754,6 +781,166 @@ class SubCluster:
         self.plot_subcluster('left', max_x = max_x, alpha=alpha, average=False)
         subplot(122)
         self.plot_subcluster('right', max_x = max_x, alpha=alpha, average=False)
+
+'''
+AnyCluster Class
+'''
+
+class AnyCluster:
+
+    '''
+        Given a CoAnalysis object an a cluster number (0 to 2N-1, where N is the original number
+        of curves), returns an AnyCluster object.
+
+        Parameters
+        ---------
+        
+        coa : a CoAnalysis object
+
+        cnum : a number from 1 to 2N-1 where N is the number of curves in coa
+
+    ''' 
+
+    def __init__(self, coa, cnum):
+        from scipy.cluster.hierarchy import to_tree
+        from numpy import sort
+        
+        self.cluster_number = cnum
+        self.co_analysis = coa
+        self.N = coa.get_sample_size()
+        root, node_list = to_tree(coa.Z, rd = True)
+        self.cluster_node = node_list[cnum]
+        
+        if cnum >= self.N:
+            self.min_coincidence = 1 - coa.Z[cnum-self.N][2]
+            self.left_id = int(coa.Z[cnum-self.N][0])
+            self.right_id = int(coa.Z[cnum-self.N][1])
+            self.number_of_curves = int(coa.Z[cnum-self.N][3])
+            self.curve_indexes = sort(any_pre_order(root, self.cluster_node))
+        else:
+            self.min_coincidence = 1
+            self.left_id = None
+            self.right_id = None
+            self.number_of_curves = 1
+            self.curve_indexes = [self.cluster_number]
+
+    def list_curve_indexes(self):
+        return self.curve_indexes
+
+    def get_cluster_size(self):
+        return len(self.curve_indexes)
+
+    def get_min_coincidence(self):
+        return self.min_coincidence
+
+    def list_curve_names(self):
+        coa = self.co_analysis
+        return [coa.list_curve_names()[i] for i in self.curve_indexes]
+
+    def list_density_files(self):
+        '''
+        Returns a list of the locations of the density files for this cluster.
+        '''
+        coa = self.co_analysis
+        files = coa.list_density_files()
+        return [files[i] for i in self.curve_indexes]
+
+    def list_tss_force_files(self):
+        '''
+        Returns a list of the locations of the tss_force files for this cluster.
+        '''
+        coa = self.co_analysis
+        files = coa.list_tss_force_files()
+        return [files[i] for i in self.curve_indexes]
+
+    def get_tss_force_arrays(self):
+        tss_force_files = self.list_tss_force_files()
+        tss_force_list = []
+        for file in tss_force_files:
+            tss_force_list.append(load2Col(file))
+        return tss_force_list
+
+    def list_cluster_coincidences(self):
+        coa = self.co_analysis
+        indexes = self.list_curve_indexes()
+        coincidence = []
+        i = 0
+        while i < len(indexes):
+            k = i+1
+            while k < len(indexes):
+                coincidence.append(round(coa.map_pair_to_coincidence(indexes[i], indexes[k]),5))
+                k = k+1
+            i = i+1
+        return coincidence
+    
+    def list_cluster_shifts(self):
+        coa = self.co_analysis
+        indexes = self.list_curve_indexes()
+        shift = []
+        i = 0
+        while i < len(indexes):
+            k = i+1
+            while k < len(indexes):
+                shift.append(round(coa.map_pair_to_shift(indexes[i], indexes[k]),4))
+                k = k+1
+            i = i+1
+        return shift
+
+    def list_smallest_shifts(self):
+        '''
+        Finds the curve to which we should align all the
+        other curves (because it is in the centre) and provides
+        a list of shifts to apply to the other curves relative to
+        that curve. These shifts are also AVERAGED.
+        '''
+        from numpy import arange
+        shifts = self.list_cluster_shifts()
+        N = self.get_cluster_size()
+        if N == 1:
+            return [0], 0
+        elif N == 2:
+            smallest_shifts = [-1*shifts[0]/2, shifts[0]/2]
+            return smallest_shifts, 0
+        else:
+            matrix = [([0]*N) for i in arange(0, N**2, N)]
+            i = 0
+            k = 0
+            while i < N:
+                j = 0
+                while j < N:
+                    if i == k:
+                        matrix[i][j] = 0
+                    if i < j:
+                        matrix[j][i] = shifts[k]*-1
+                        matrix[i][j] = shifts[k]
+                        k = k+1
+                    j = j+1
+                i = i+1
+            shift_sums = []
+            for row in matrix:
+                shift_sums.append(sum([abs(x) for x in row]))
+
+            min_shifts = min(shift_sums)
+            min_index = shift_sums.index(min_shifts)
+            smallest_shifts = matrix[min_index]
+            av_shift = sum(smallest_shifts)/self.get_cluster_size()
+            smallest_shifts = [round(x-av_shift,3) for x in smallest_shifts]
+            return smallest_shifts, min_index
+
+    def get_Lc_density_arrays(self):
+        density_files = self.list_density_files()
+        Lc_density_list = []
+        for file in density_files:
+            Lc_density_list.append(load2Col(file))
+        return Lc_density_list
+
+    def get_shifted_Lc_density_arrays(self):
+        Lc_density_list = self.get_Lc_density_arrays()
+        shift_list = self.list_smallest_shifts()[0]
+        shifted_Lc_density_list = [[lc[0]+s, lc[1]] for [lc, s] in zip(Lc_density_list, shift_list)]
+        return shifted_Lc_density_list
+
+
 
 ''' 
 Extraneous functions not in any object.
