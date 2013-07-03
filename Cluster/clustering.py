@@ -201,6 +201,34 @@ class FlatClusters:
         l3 = '%d clusters of %d curves\n' % (self.get_number_of_clusters(), len(self.list_flat_cluster()))
         return l1+l2+l3
     
+
+    def get_flat_ids(self):
+        '''
+        Returns a flattened cluster list T where each entry 
+        corresponds to the initial curve index (in the CoAnalysis clustering
+        process) to which that curve belongs.
+        '''
+        from numpy import arange, asarray, where
+
+        coa = self.co_analysis
+        N = coa.get_sample_size()
+        T_ids = arange(0,N)
+        d = 1 - self.co_cut
+        i = 0
+        
+        while i < len(coa.Z):
+            row = asarray(coa.Z[i])
+            if row[2] < d:
+                i1 = where(row[0] == T_ids)[0]
+                i2 = where(row[1] == T_ids)[0]
+                for x in i1:
+                    T_ids[x] = N+i
+                for x in i2:
+                    T_ids[x] = N+i
+            i = i+1
+        return list(T_ids)
+
+
     def get_co_analysis(self):
         ''' 
         Returns the CoAnalysis object used to perform this flattening.
