@@ -420,36 +420,42 @@ class Cluster:
         '''
         from numpy import arange
         shifts = self.list_cluster_shifts()
-        matrix = [[0,0,0,0,0] for i in arange(0, 25, 5)]
-        i = 0
-        k = 0
-        while i < 5:
-            j = 0
-            while j < 5:
-                if i == k:
-                    matrix[i][j] = 0
-                if i < j:
-                    matrix[j][i] = shifts[k]*-1
-                    matrix[i][j] = shifts[k]
-                    k = k+1
-                j = j+1
-            i = i+1
-        shift_sums = []
-        for row in matrix:
-            shift_sums.append(sum([abs(x) for x in row]))
+        N = self.get_cluster_size()
+        if N == 1:
+            return [0], 0
+        elif N == 2:
+            smallest_shifts = [-1*shifts[0]/2, shifts[0]/2]
+            return smallest_shifts, 0
+        else:
+            matrix = [([0]*N) for i in arange(0, N**2, N)]
+            i = 0
+            k = 0
+            while i < N:
+                j = 0
+                while j < N:
+                    if i == k:
+                        matrix[i][j] = 0
+                    if i < j:
+                        matrix[j][i] = shifts[k]*-1
+                        matrix[i][j] = shifts[k]
+                        k = k+1
+                    j = j+1
+                i = i+1
+            shift_sums = []
+            for row in matrix:
+                shift_sums.append(sum([abs(x) for x in row]))
 
-        min_shifts = min(shift_sums)
-        min_index = shift_sums.index(min_shifts)
-        smallest_shifts = matrix[min_index]
-        av_shift = sum(smallest_shifts)/self.get_cluster_size()
-        smallest_shifts = [x-av_shift for x in smallest_shifts]
-        return smallest_shifts
+            min_shifts = min(shift_sums)
+            min_index = shift_sums.index(min_shifts)
+            smallest_shifts = matrix[min_index]
+            av_shift = sum(smallest_shifts)/self.get_cluster_size()
+            smallest_shifts = [round(x-av_shift,3) for x in smallest_shifts]
+            return smallest_shifts, min_index
 
     def list_initial_shifts(self):
         shift_list = self.list_cluster_shifts()
         initial_shifts = [0] + shift_list[0:self.get_cluster_size()-1]
         return initial_shifts
-
 
     def get_Lc_density_arrays(self):
         density_files = self.list_density_files()
@@ -460,19 +466,20 @@ class Cluster:
 
     def get_shifted_Lc_density_arrays(self):
         Lc_density_list = self.get_Lc_density_arrays()
-        shift_list = self.list_cluster_shifts()
+        shift_list = self.list_smallest_shifts()[0]
+        shifted_Lc_density_list = [[lc[0]+s, lc[1]] for [lc, s] in zip(Lc_density_list, shift_list)]
+        return shifted_Lc_density_list
 
     def plot_cluster(self, alpha = 0.5, max_x = 150, max_y = 0):
         import matplotlib.pyplot as plt
         from numpy import average, arange
         Lc_density_list = self.get_Lc_density_arrays()
-        initial_shifts = self.list_initial_shifts()
-        av_shift = average(initial_shifts)
+        best_shifts = self.list_smallest_shifts()[0]
         co = self.get_min_coincidence()
 
         i = 0
         for Lc_density in Lc_density_list:
-            plt.plot(Lc_density[0] + initial_shifts[i] - av_shift, Lc_density[1], 'k-', alpha=alpha)
+            plt.plot(Lc_density[0] + best_shifts[i], Lc_density[1], 'k-', alpha=alpha)
             i = i+1
         plt.xlim(0,max_x)
         if max_y == 0:
