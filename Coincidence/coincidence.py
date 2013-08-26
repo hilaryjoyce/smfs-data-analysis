@@ -282,8 +282,6 @@ def saveMultipleCoincidence(folder, type = 'density', max_x = 600, shift_list = 
 ''' 
 Function to save multiple coincidence values for different shifts in ONE file without
 completely swamping the memory.
-We'll work out how to get individual files out afterwards (readline/writeline to).
-We can also possible have MULTIPLE FILES open at once!
 '''
 
 def saveAllCoincidence(folder, type='density', max_x = 600, shift_list = [0, 5, 10, 15, 20, 30, 50, 100, 'No']):

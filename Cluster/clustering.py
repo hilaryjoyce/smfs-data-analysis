@@ -545,36 +545,35 @@ class Cluster:
         #plt.xlabel("Contour Length (nm)")
         #plt.ylabel("Density")
         #plt.title("Cluster of %d curves at co = %g" % (self.get_cluster_size(), self.get_min_coincidence()))
-        plt.text(max_x/1.5, max_y/1.5, '%d curves' % self.get_cluster_size(), size = 14)
-        plt.text(max_x/1.2, max_y/1.2, '%d' % self.cluster_number, size=14)        
+        plt.text(max_x/1.6, max_y/1.6, 'N = %d' % self.get_cluster_size(), size = 10)
+        plt.text(max_x/1.2, max_y/1.2, '%d' % self.cluster_number, size=10)        
 
         return plt.gcf()
 
-    def plot_plain_cluster(self, alpha = 0.5, max_x = 150, max_y = 0):
+    def plot_plain_cluster(self, alpha = 0.5, max_x = 150, color='k', max_y = 0, labels=True):
         import matplotlib.pyplot as plt
         from numpy import average, arange
         Lc_density_list = self.get_Lc_density_arrays()
-        initial_shifts = self.list_initial_shifts() # CHECK THIS
-        av_shift = average(initial_shifts) # CHECK THIS
+        initial_shifts = self.list_smallest_shifts()[0] # CHECK THIS
         co = self.get_min_coincidence()
 
         i = 0
         for Lc_density in Lc_density_list:
-            plt.plot(Lc_density[0] + initial_shifts[i] - av_shift, Lc_density[1], 'k-', alpha=alpha)
+            plt.plot(Lc_density[0] + initial_shifts[i], Lc_density[1], '-', alpha=alpha, color=color)
             i = i+1
         plt.xlim(0,max_x)
         if max_y == 0:
             max_y = plt.axis()[3]
         plt.ylim(0,max_y)
-        plt.yticks([])
-        plt.xticks([])
+        #plt.yticks([])
+        #plt.xticks([])
         #plt.text(max_x/1.5, max_y/1.5, '$\Gamma\geq$ %.3f' % co, size = 16)
         #plt.xlabel("Contour Length (nm)")
         #plt.ylabel("Density")
         #plt.title("Cluster of %d curves at co = %g" % (self.get_cluster_size(), self.get_min_coincidence()))
-        plt.text(max_x/1.5, max_y/1.5, 'N = %d' % self.get_cluster_size(), size = 12)
-        plt.text(max_x/1.2, max_y/1.2, '%d' % self.cluster_number, size=12)        
-
+        if labels:
+            #plt.text(max_x/1.5, max_y/1.5, 'N = %d' % self.get_cluster_size(), size = 12)
+            plt.text(max_x*0.9, max_y*0.9,'%d (N = %d)' % (self.cluster_number, self.get_cluster_size()), size=12, ha='right', va='top')        
         return plt.gcf()
 
 class SubCluster:
@@ -722,6 +721,47 @@ class SubCluster:
             i = i+1
         return shift
 
+    def list_smallest_shifts(self, subcluster):
+        '''
+        Finds the curve to which we should align all the
+        other curves (because it is in the centre) and provides
+        a list of shifts to apply to the other curves relative to
+        that curve. These shifts are also AVERAGED.
+        '''
+        from numpy import arange
+        shifts = self.list_curve_shifts(subcluster)
+        N = self.get_cluster_size(subcluster)
+        if N == 1:
+            return [0], 0
+        elif N == 2:
+            smallest_shifts = [-1*shifts[0]/2, shifts[0]/2]
+            return smallest_shifts, 0
+        else:
+            matrix = [([0]*N) for i in arange(0, N**2, N)]
+            i = 0
+            k = 0
+            while i < N:
+                j = 0
+                while j < N:
+                    if i == k:
+                        matrix[i][j] = 0
+                    if i < j:
+                        matrix[j][i] = shifts[k]*-1
+                        matrix[i][j] = shifts[k]
+                        k = k+1
+                    j = j+1
+                i = i+1
+            shift_sums = []
+            for row in matrix:
+                shift_sums.append(sum([abs(x) for x in row]))
+
+            min_shifts = min(shift_sums)
+            min_index = shift_sums.index(min_shifts)
+            smallest_shifts = matrix[min_index]
+            av_shift = sum(smallest_shifts)/self.get_cluster_size(subcluster)
+            smallest_shifts = [round(x-av_shift,3) for x in smallest_shifts]
+            return smallest_shifts
+
     def list_initial_shifts(self, subcluster):
         '''
         Returns a list of the initial shifts to apply to align curves
@@ -732,24 +772,33 @@ class SubCluster:
         initial_shifts = [0] + shift_list[0:N-1]
         return initial_shifts
 
-    def plot_subcluster(self, subcluster, max_x = 150, alpha = 0.5, average=False):
+    def plot_subcluster(self, subcluster, max_x = 150, max_y = 0, alpha = 0.5, average=False, uplabel=None):
         import matplotlib.pyplot as plt
         from numpy import average
         Lc_density_list = self.get_Lc_density_arrays(subcluster)
-        initial_shifts = self.list_initial_shifts(subcluster)
-        av_shift = average(initial_shifts)
+        initial_shifts = self.list_smallest_shifts(subcluster)
         co = self.get_cluster_coincidence(subcluster)
         i = 0
         for Lc_density in Lc_density_list:
-            plt.plot(Lc_density[0] + initial_shifts[i] - av_shift, Lc_density[1], 'k-', alpha=alpha)
+            plt.plot(Lc_density[0] + initial_shifts[i], Lc_density[1], 'k-', alpha=alpha)
             i = i+1
 
         plt.xlim(0,max_x)
+
+        plt.xlabel('$L_c$ (nm)')
+        plt.ylabel('Density')
+        if max_y != 0:
+            plt.ylim(0, max_y)
         max_y = plt.axis()[3]
-        plt.yticks([0, max_y/2, max_y])
-        plt.title("%s of %d curves ($\Gamma\geq$ %.3f)" % \
+        if uplabel == None:
+            plt.text(max_x*0.6, max_y*0.6, '%s\n(N = %d)' % (subcluster, self.get_cluster_size(subcluster)))
+        else:
+            plt.text(max_x*0.6, max_y*0.6, '%s\n%s\n(N = %d)' % (uplabel, subcluster, self.get_cluster_size(subcluster)))
+        #plt.yticks([0, max_y/2, max_y])
+        #plt.title("%s of %d curves ($\Gamma\geq$ %.3f)" % \
+        #     (subcluster, self.get_cluster_size(subcluster), co))
+        print ("%s of %d curves ($\Gamma\geq$ %.3f)" % \
              (subcluster, self.get_cluster_size(subcluster), co))
-        
         #plt.text(max_x/1.5, max_y/1.5, '$\Gamma\geq$ %.3f' % co, size = 10, color='blue')
         # plt.xlabel("Contour Length (nm)")
         # plt.ylabel("Density")
@@ -774,13 +823,13 @@ class SubCluster:
                 subcluster, self.get_cluster_size(subcluster)))
         return plt.gcf()
 
-    def plot_both_subclusters(self, max_x = 150, alpha=0.5):
+    def plot_both_subclusters(self, max_x = 150, alpha=0.5, max_y = 0):
         from matplotlib.pyplot import subplot, figsize
         #figsize(12,4)
         subplot(121)
-        self.plot_subcluster('left', max_x = max_x, alpha=alpha, average=False)
+        self.plot_subcluster('left', max_x = max_x, alpha=alpha, average=False, max_y=max_y)
         subplot(122)
-        self.plot_subcluster('right', max_x = max_x, alpha=alpha, average=False)
+        self.plot_subcluster('right', max_x = max_x, alpha=alpha, average=False, max_y=max_y)
 
 '''
 AnyCluster Class

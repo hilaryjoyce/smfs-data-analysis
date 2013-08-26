@@ -296,7 +296,7 @@ def find_last_point(tss, force, d=0.1):
             return t, f, 0
     #print i
     # skip the first crazy region (hopefully this doesn't bring us to the end...)
-    while std(f[10*i:10*(i+1)]) > 100:
+    while std(f[i:i+10]) > 100:
             i = i+1
             if 10*(i+1) == len(f):
                 return t, f, 0

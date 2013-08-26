@@ -4,7 +4,7 @@ Takes an all_coincidence_report.txt IN a Coincidence_max_x folder already
 and returns a folder + coincidence report for each shift.
 '''
 
-def split_all_coincidence(param_folder, type='density', max_x=300):
+def split_all(param_folder, type='density', max_x=300):
     '''
     Takes an all_coincidence_report.txt IN a Coincidence_max_x folder already
     and returns a folder + coincidence report for each shift.
@@ -81,10 +81,11 @@ def split_all_coincidence(param_folder, type='density', max_x=300):
 
     return None
 
-def split_one_coincidence(param_folder, id=0, type='density', max_x=300):
+def split_one(param_folder, id=0, type='density', max_x=300):
     '''
     Takes an all_coincidence_report.txt IN a Coincidence_max_x folder already
-    and returns a folder + coincidence report for each shift.
+    and returns a folder + coincidence report for each shift. Index corresponds
+    to one of the indexes in the initial shift list. USE THIS ONE.
     '''
 
     from glob import glob

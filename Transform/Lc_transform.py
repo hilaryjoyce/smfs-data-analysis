@@ -24,7 +24,7 @@ def LcList(folder, p = 0.4, minTss = 5, minForce = 45):
 
     return Lc_list, curve_num_list
 
-def saveLcList(folder, p = 0.4, minTss = 5.0, minForce = 45.0):
+def saveLcList(folder, p = 0.4, minTss = 'Var', minForce = 45.0):
     import os
     from numpy import zeros
 
