@@ -776,7 +776,7 @@ class SubCluster:
         import matplotlib.pyplot as plt
         from numpy import average
         Lc_density_list = self.get_Lc_density_arrays(subcluster)
-        initial_shifts = self.list_smallest_shifts(subcluster)
+        initial_shifts = self.list_smallest_shifts(subcluster)[0]
         co = self.get_cluster_coincidence(subcluster)
         i = 0
         for Lc_density in Lc_density_list:
@@ -830,10 +830,6 @@ class SubCluster:
         self.plot_subcluster('left', max_x = max_x, alpha=alpha, average=False, max_y=max_y)
         subplot(122)
         self.plot_subcluster('right', max_x = max_x, alpha=alpha, average=False, max_y=max_y)
-
-'''
-AnyCluster Class
-'''
 
 class AnyCluster:
 
